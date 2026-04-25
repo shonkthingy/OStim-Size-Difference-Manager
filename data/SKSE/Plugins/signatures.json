@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "signatures": [
+    {
+      "ostimVersion": "7.4.0.0",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1"
+    },
+    {
+      "ostimVersion": "7.4.0.3",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1"
+    }
+  ],
+  "notes": "Generate signatures per OStim build as documented in README."
+}

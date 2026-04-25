@@ -1,0 +1,15 @@
+/build/
+/skse/build/
+/.vs/
+/.idea/
+/.vscode/
+*.user
+*.VC.db
+*.VC.opendb
+*.obj
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+*.log
+/data/SKSE/Plugins/*.dll

@@ -7,7 +7,7 @@
 #include "OStimTypes/ActorCondition.h"
 #include "OStimTypes/Node.h"
 #include "SceneCache/SceneCache.h"
-#include "Util/Tls.h"
+#include "Util/State.h"
 
 #include "PCH.h"
 #include "spdlog/spdlog.h"
@@ -34,7 +34,7 @@ namespace
 		}
 
 		const auto mode = SizeDiff::Config::GetMode();
-		const auto scales = SizeDiff::Tls::CurrentScales();
+		const auto scales = SizeDiff::State::GetScales(SizeDiff::State::GetPlayerThreadId());
 		if (mode == SizeDiff::Config::Mode::Strict && !scales.empty()) {
 			const auto cache = SizeDiff::SceneCache::Get();
 			const float tolerance = SizeDiff::Config::GetTolerance();

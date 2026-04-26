@@ -13,6 +13,7 @@ std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPdbSymbol(st
 	}
 
 	const HANDLE process = GetCurrentProcess();
+	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
 	if (!SymInitialize(process, nullptr, TRUE)) {
 		spdlog::warn("SymInitialize failed");
 		return std::nullopt;

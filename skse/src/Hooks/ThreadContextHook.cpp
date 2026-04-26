@@ -27,7 +27,39 @@ namespace
                 scales.push_back(1.0f);
                 continue;
             }
-            scales.push_back(actor->GetReferenceRuntimeData().refScale / 100.0f);
+
+            const auto& actorData = actor->GetActorRuntimeData();
+            const auto& refData = actor->GetReferenceRuntimeData();
+            const RE::TESNPC* actorBase = actor->GetActorBase();
+            const uint8_t gender = (actorBase && actorBase->GetSex() == RE::SEXES::SEX::kFemale) ? 1u : 0u;
+
+            const float refScale = static_cast<float>(refData.refScale) / 100.0f;
+            float raceHeight = 1.0f;
+
+            if (const RE::TESRace* race = actorData.race; race) {
+                raceHeight = race->data.height[gender];
+            }
+
+            const float finalScale = raceHeight * refScale;
+            scales.push_back(finalScale);
+
+            const RE::TESRace* race = actorData.race;
+            const char* raceName = "<null>";
+            if (race) {
+                if (const char* name = race->GetName(); name && name[0] != '\0') {
+                    raceName = name;
+                } else {
+                    raceName = "<unnamed>";
+                }
+            }
+
+            spdlog::info(
+                "ScalesFromThread actor debug: race='{}' gender={} raceHeight={} refScale={} finalScale={}",
+                raceName,
+                gender,
+                raceHeight,
+                refScale,
+                finalScale);
         }
         return scales;
     }

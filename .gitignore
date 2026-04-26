@@ -1,15 +1,37 @@
+# Build outputs
 /build/
+/builds/
+/out/
 /skse/build/
-/.vs/
-/.idea/
-/.vscode/
-*.user
-*.VC.db
-*.VC.opendb
+
+# MSVC / link artifacts
 *.obj
 *.pdb
 *.ilk
+*.exp
+*.lib
 *.iobj
 *.ipdb
+
+# Visual Studio / MSVC IDE
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
 *.log
-/data/SKSE/Plugins/*.dll
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Other IDEs
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Do not ignore: built plugin DLL under data/SKSE/Plugins/ (commit the shipped artifact)

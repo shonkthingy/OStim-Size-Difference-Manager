@@ -2,6 +2,7 @@
 
 #include "Config/Config.h"
 #include "Hooks/GetRandomNodeHook.h"
+#include "Hooks/NavigationHook.h"
 #include "Hooks/ThreadContextHook.h"
 #include "SceneCache/SceneLoader.h"
 #include "Util/Logger.h"
@@ -66,6 +67,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
 
 	const auto contextOk = SizeDiff::Hooks::InstallThreadContextHooks();
 	const auto nodeHookOk = SizeDiff::Hooks::InstallGetRandomNodeHook();
-	spdlog::info("Hook setup complete: context={}, getRandomNode={}", contextOk, nodeHookOk);
+	const auto navHookOk = SizeDiff::Hooks::InstallNavigationHook();
+	spdlog::info("Hook setup complete: context={}, getRandomNode={}, getRandomNodeInRange={}", contextOk, nodeHookOk, navHookOk);
 	return true;
 }

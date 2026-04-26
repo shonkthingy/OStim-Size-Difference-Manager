@@ -30,9 +30,10 @@ bool SizeDiff::SceneCache::Cache::Matches(const std::string& sceneId, const std:
 		return true;
 	}
 
+	const float diff = SizeDiff::Matching::ComputeDiff(actorScales);
 	const auto it = _entries.find(sceneId);
 	if (it == _entries.end()) {
-		return true;
+		return diff <= tolerance;
 	}
 
 	return SizeDiff::Matching::MatchesStrict(it->second.diff, actorScales, tolerance);

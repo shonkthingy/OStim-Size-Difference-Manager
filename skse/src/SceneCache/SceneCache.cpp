@@ -9,7 +9,9 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <mutex>
+#include <optional>
 #include <ranges>
 
 namespace
@@ -124,6 +126,103 @@ std::size_t SizeDiff::SceneCache::Cache::SceneCount() const
 {
 	std::scoped_lock lock(g_mutex);
 	return _entries.size();
+}
+
+void SizeDiff::SceneCache::Cache::AddExemption(std::string sceneId)
+{
+	std::scoped_lock lock(g_mutex);
+	_exemptions.insert(ToLower(std::move(sceneId)));
+}
+
+std::vector<std::string> SizeDiff::SceneCache::Cache::GetExemptionsCopy() const
+{
+	std::scoped_lock lock(g_mutex);
+	std::vector<std::string> out(_exemptions.begin(), _exemptions.end());
+	std::ranges::sort(out);
+	return out;
+}
+
+std::vector<std::pair<std::string, float>> SizeDiff::SceneCache::Cache::GetOverridesCopy() const
+{
+	std::scoped_lock lock(g_mutex);
+	std::vector<std::pair<std::string, float>> out(_overrides.begin(), _overrides.end());
+	std::ranges::sort(out, [](const auto& a, const auto& b) { return a.first < b.first; });
+	return out;
+}
+
+bool SizeDiff::SceneCache::Cache::SaveUserOverrides()
+{
+	nlohmann::json doc;
+	{
+		std::scoped_lock lock(g_mutex);
+		doc["exemptions"] = nlohmann::json::array();
+		for (const auto& e : _exemptions) {
+			doc["exemptions"].push_back(e);
+		}
+		doc["overrides"] = nlohmann::json::object();
+		for (const auto& [k, v] : _overrides) {
+			doc["overrides"][k] = v;
+		}
+	}
+
+	const std::filesystem::path path{ "Data/SKSE/Plugins/OStimSizeDifferenceManager_Overrides.json" };
+	std::ofstream out(path);
+	if (!out.good()) {
+		spdlog::error("Could not write overrides to {}", path.string());
+		return false;
+	}
+	out << doc.dump(2);
+	spdlog::info("Wrote exemptions/overrides to {}", path.string());
+	return true;
+}
+
+std::map<std::string, std::vector<std::string>> SizeDiff::SceneCache::Cache::GetPackScenes() const
+{
+	std::map<std::string, std::vector<std::string>> out;
+	{
+		std::scoped_lock lock(g_mutex);
+		for (const auto& [id, info] : _entries) {
+			const std::string pack = info.packName.empty() ? std::string("(root)") : info.packName;
+			out[pack].push_back(id);
+		}
+	}
+	for (auto& packEntry : out) {
+		std::ranges::sort(packEntry.second);
+	}
+	return out;
+}
+
+bool SizeDiff::SceneCache::Cache::IsExempt(const std::string& sceneId) const
+{
+	std::scoped_lock lock(g_mutex);
+	return _exemptions.contains(ToLower(sceneId));
+}
+
+void SizeDiff::SceneCache::Cache::ToggleExemption(const std::string& sceneId, bool exempt)
+{
+	std::scoped_lock lock(g_mutex);
+	const auto id = ToLower(sceneId);
+	if (exempt) {
+		_exemptions.insert(id);
+	} else {
+		_exemptions.erase(id);
+	}
+}
+
+void SizeDiff::SceneCache::Cache::SetOverride(const std::string& sceneId, float diff)
+{
+	std::scoped_lock lock(g_mutex);
+	_overrides[ToLower(sceneId)] = diff;
+}
+
+std::optional<SizeDiff::SceneCache::SceneScaleInfo> SizeDiff::SceneCache::Cache::GetSceneInfo(const std::string& sceneId) const
+{
+	std::scoped_lock lock(g_mutex);
+	const auto it = _entries.find(ToLower(sceneId));
+	if (it == _entries.end()) {
+		return std::nullopt;
+	}
+	return it->second;
 }
 
 std::shared_ptr<SizeDiff::SceneCache::Cache> SizeDiff::SceneCache::Get()

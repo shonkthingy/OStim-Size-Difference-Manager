@@ -9,6 +9,7 @@ namespace
 	std::mutex g_mutex;
 	std::unordered_map<uint32_t, std::vector<float>> g_scalesByThread;
 	std::atomic<uint32_t> g_playerOStimThreadId{ 0 };
+	std::atomic<uint32_t> g_lastActiveOStimThreadId{ 0 };
 }
 
 void SizeDiff::State::SetScales(uint32_t threadId, std::vector<float> scales)
@@ -41,4 +42,14 @@ void SizeDiff::State::SetPlayerThreadId(uint32_t threadId)
 uint32_t SizeDiff::State::GetPlayerThreadId()
 {
 	return g_playerOStimThreadId.load(std::memory_order_acquire);
+}
+
+void SizeDiff::State::NotifyThreadActive(uint32_t threadId)
+{
+	g_lastActiveOStimThreadId.store(threadId, std::memory_order_relaxed);
+}
+
+uint32_t SizeDiff::State::GetLastActiveThreadId()
+{
+	return g_lastActiveOStimThreadId.load(std::memory_order_relaxed);
 }

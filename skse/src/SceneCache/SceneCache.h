@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -14,6 +16,7 @@ namespace SizeDiff::SceneCache
 		float maxScale{ 1.0F };
 		float diff{ 0.0F };
 		int actorCount{ 0 };
+		std::string packName;  // top-level folder under scenes/, e.g. "AnubsPack", "BakaHuman"
 	};
 
 	class Cache final
@@ -24,6 +27,19 @@ namespace SizeDiff::SceneCache
 		bool IsReady() const;
 		bool Matches(const std::string& sceneId, const std::vector<float>& actorScales, float tolerance) const;
 		std::size_t SceneCount() const;
+
+		void AddExemption(std::string sceneId);
+		std::vector<std::string> GetExemptionsCopy() const;
+		std::vector<std::pair<std::string, float>> GetOverridesCopy() const;
+		bool SaveUserOverrides();
+
+		// Returns map of pack name -> scene IDs in that pack (sorted). Thread-safe.
+		std::map<std::string, std::vector<std::string>> GetPackScenes() const;
+
+		bool IsExempt(const std::string& sceneId) const;
+		void ToggleExemption(const std::string& sceneId, bool exempt);
+		void SetOverride(const std::string& sceneId, float diff);
+		std::optional<SceneScaleInfo> GetSceneInfo(const std::string& sceneId) const;
 
 	private:
 		std::unordered_map<std::string, SceneScaleInfo> _entries;

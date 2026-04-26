@@ -4,6 +4,7 @@
 #include "AddressResolution/PdbResolver.h"
 #include "AddressResolution/VersionGate.h"
 #include "Config/Config.h"
+#include "Hooks/FilterContext.h"
 #include "OStimTypes/ActorCondition.h"
 #include "OStimTypes/Node.h"
 #include "SceneCache/SceneCache.h"
@@ -33,32 +34,49 @@ namespace
 			return nullptr;
 		}
 
-		const auto mode = SizeDiff::Config::GetMode();
-		const auto scales = SizeDiff::State::GetScales(SizeDiff::State::GetPlayerThreadId());
-		if (mode == SizeDiff::Config::Mode::Strict && !scales.empty()) {
-			const auto cache = SizeDiff::SceneCache::Get();
-			const float tolerance = SizeDiff::Config::GetTolerance();
-
-			auto wrapped = [original = std::move(nodeCondition), cache, scales, tolerance](Graph::Node* node) -> bool {
-				if (original && !original(node)) {
-					return false;
-				}
-				if (!node) {
-					return false;
-				}
-				const bool match = cache->Matches(node->getNodeID(), scales, tolerance);
-				if (!match) {
-					spdlog::info("getRandomNodeInRange: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);
-				} else {
-					spdlog::trace("getRandomNodeInRange: Approved {}", node->getNodeID());
-				}
-				return match;
-			};
-
-			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(wrapped));
+		const auto settings = SizeDiff::Config::Get();
+		if (settings.mode != SizeDiff::Config::Mode::Strict) {
+			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
 		}
 
-		return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
+		const uint32_t contextThread = SizeDiff::Filter::ResolveGraphHookThreadId();
+		if (SizeDiff::Filter::ShouldBypassFiltering(contextThread, settings)) {
+			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
+		}
+
+		const auto scales = SizeDiff::State::GetScales(contextThread);
+		if (scales.empty()) {
+			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
+		}
+
+		const auto cache = SizeDiff::SceneCache::Get();
+		const float tolerance = settings.tolerance;
+
+		auto wrapped = [original = std::move(nodeCondition), cache, scales, tolerance, settings](Graph::Node* node) -> bool {
+			if (original && !original(node)) {
+				return false;
+			}
+			if (!node) {
+				return false;
+			}
+			const bool match = cache->Matches(node->getNodeID(), scales, tolerance);
+			if (match) {
+				spdlog::trace("getRandomNodeInRange: Approved {}", node->getNodeID());
+				return true;
+			}
+			if (settings.fallbackBehavior == 1) {
+				spdlog::info("getRandomNodeInRange: Soft fallback allowing {} (tolerance={})", node->getNodeID(), tolerance);
+				return true;
+			}
+			if (settings.fallbackBehavior == 2) {
+				spdlog::warn("getRandomNodeInRange: Refusing {} (scale mismatch, tolerance={})", node->getNodeID(), tolerance);
+			} else {
+				spdlog::info("getRandomNodeInRange: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);
+			}
+			return false;
+		};
+
+		return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(wrapped));
 	}
 }
 

@@ -49,7 +49,38 @@ void SizeDiff::Config::Load()
 
 	const auto mode = static_cast<int>(g_settings.mode);
 
-	spdlog::info("Config loaded: mode={}, tolerance={}", mode, g_settings.tolerance);
+	spdlog::info(
+		"Config loaded: mode={}, tolerance={}, applyPlayer={}, applyNpc={}, autoMode={}, fallback={}",
+		mode,
+		g_settings.tolerance,
+		g_settings.applyToPlayerScenes,
+		g_settings.applyToNpcScenes,
+		g_settings.applyInAutoMode,
+		g_settings.fallbackBehavior);
+}
+
+void SizeDiff::Config::Save()
+{
+	std::scoped_lock lock(g_mutex);
+	std::ofstream out(kIniPath);
+	if (!out.good()) {
+		spdlog::error("Config: could not write {}", "Data/SKSE/Plugins/OStimSizeDifferenceManager.ini");
+		return;
+	}
+	out << "[General]\n";
+	out << "Mode=" << static_cast<int>(g_settings.mode) << '\n';
+	out << "Tolerance=" << g_settings.tolerance << '\n';
+	out << "ApplyToPlayerScenes=" << (g_settings.applyToPlayerScenes ? "true" : "false") << '\n';
+	out << "ApplyToNpcScenes=" << (g_settings.applyToNpcScenes ? "true" : "false") << '\n';
+	out << "ApplyInAutoMode=" << (g_settings.applyInAutoMode ? "true" : "false") << '\n';
+	out << "FallbackBehavior=" << g_settings.fallbackBehavior << '\n';
+	spdlog::info("Config saved to OStimSizeDifferenceManager.ini");
+}
+
+void SizeDiff::Config::Set(Settings settings)
+{
+	std::scoped_lock lock(g_mutex);
+	g_settings = std::move(settings);
 }
 
 void SizeDiff::Config::Reload()

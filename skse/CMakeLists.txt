@@ -33,10 +33,12 @@ add_library(${PROJECT_NAME} SHARED
     src/AddressResolution/VersionGate.cpp
     src/AddressResolution/PdbResolver.cpp
     src/AddressResolution/PatternScanner.cpp
+    src/Hooks/FilterContext.cpp
     src/Hooks/GetRandomNodeHook.cpp
     src/Hooks/MenuFilterHook.cpp
     src/Hooks/NavigationHook.cpp
     src/Hooks/ThreadContextHook.cpp
+    src/UI/Menu.cpp
     src/Util/State.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)

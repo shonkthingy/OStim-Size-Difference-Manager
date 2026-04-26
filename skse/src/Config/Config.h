@@ -24,6 +24,8 @@ namespace SizeDiff::Config
 
 	void Load();
 	void Reload();
+	void Save();
+	void Set(Settings settings);
 	Settings Get();
 	Mode GetMode();
 	float GetTolerance();

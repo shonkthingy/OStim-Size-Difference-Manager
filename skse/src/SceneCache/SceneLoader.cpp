@@ -72,11 +72,23 @@ namespace
 			}
 
 			if (count > 0) {
+				std::string packName;
+				const auto rel = std::filesystem::relative(entry.path(), root);
+				std::vector<std::filesystem::path> components;
+				for (const auto& part : rel) {
+					components.push_back(part);
+				}
+				// rel is like pack/foo/bar.json — first path component is the pack folder
+				if (components.size() >= 2) {
+					packName = components.front().string();
+				}
+
 				result[sceneId] = SizeDiff::SceneCache::SceneScaleInfo{
 					.minScale = minScale,
 					.maxScale = maxScale,
 					.diff = maxScale - minScale,
-					.actorCount = count
+					.actorCount = count,
+					.packName = std::move(packName)
 				};
 			}
 		}

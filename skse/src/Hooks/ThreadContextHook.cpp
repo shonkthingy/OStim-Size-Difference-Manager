@@ -83,6 +83,7 @@ namespace
 			}
 
 			const uint32_t tid = static_cast<uint32_t>(thread->getThreadID());
+			SizeDiff::State::NotifyThreadActive(tid);
 
 			std::ostringstream scaleStream;
 			for (std::size_t i = 0; i < scales.size(); ++i) {
@@ -115,6 +116,7 @@ namespace
 			}
 			auto scales = ScalesFromThread(thread);
 			const uint32_t tid = static_cast<uint32_t>(thread->getThreadID());
+			SizeDiff::State::NotifyThreadActive(tid);
 			SizeDiff::State::SetScales(tid, std::move(scales));
 			if (thread->isPlayerThread()) {
 				SizeDiff::State::SetPlayerThreadId(tid);
@@ -138,6 +140,7 @@ namespace
 			if (thread->isPlayerThread() && SizeDiff::State::GetPlayerThreadId() == tid) {
 				SizeDiff::State::SetPlayerThreadId(0);
 			}
+			SizeDiff::State::NotifyThreadActive(0);
 		}
 	};
 

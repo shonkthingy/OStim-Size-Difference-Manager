@@ -6,6 +6,7 @@
 #include "Hooks/NavigationHook.h"
 #include "Hooks/ThreadContextHook.h"
 #include "SceneCache/SceneLoader.h"
+#include "UI/Menu.h"
 #include "Util/Logger.h"
 
 #include "PCH.h"
@@ -32,6 +33,7 @@ namespace
 		if (message->type == SKSE::MessagingInterface::kPostLoad) {
 			// Request OStim's interface map now that all plugins have loaded
 			SizeDiff::Hooks::RequestOStimInterface();
+			SizeDiff::UI::Register();
 		}
 
 		if (message->type == SKSE::MessagingInterface::kDataLoaded) {

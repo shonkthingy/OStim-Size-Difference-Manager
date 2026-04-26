@@ -4,6 +4,7 @@
 #include "AddressResolution/PdbResolver.h"
 #include "AddressResolution/VersionGate.h"
 #include "Config/Config.h"
+#include "Hooks/FilterContext.h"
 #include "OStimTypes/ActorCondition.h"
 #include "OStimTypes/Navigation.h"
 #include "SceneCache/SceneCache.h"
@@ -41,18 +42,23 @@ namespace
 			return true;
 		}
 
-		const auto mode = SizeDiff::Config::GetMode();
-		if (mode != SizeDiff::Config::Mode::Strict) {
+		const auto settings = SizeDiff::Config::Get();
+		if (settings.mode != SizeDiff::Config::Mode::Strict) {
 			return true;
 		}
 
-		const auto scales = SizeDiff::State::GetScales(SizeDiff::State::GetPlayerThreadId());
+		const uint32_t contextThread = SizeDiff::Filter::ResolveMenuHookThreadId();
+		if (SizeDiff::Filter::ShouldBypassFiltering(contextThread, settings)) {
+			return true;
+		}
+
+		const auto scales = SizeDiff::State::GetScales(contextThread);
 		if (scales.empty()) {
-			spdlog::trace("fulfilledBy: Strict mode but no player scales in State; allowing navigation entry");
+			spdlog::trace("fulfilledBy: Strict mode but no scales for thread {} in State; allowing navigation entry", contextThread);
 			return true;
 		}
 
-		const float tolerance = SizeDiff::Config::GetTolerance();
+		const float tolerance = settings.tolerance;
 		const auto cache = SizeDiff::SceneCache::Get();
 		const char* const nodeId = dest->getNodeID();
 		if (!nodeId) {
@@ -63,7 +69,15 @@ namespace
 			spdlog::trace("fulfilledBy: Scene '{}' matches scales", nodeId);
 			return true;
 		}
-		spdlog::info("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
+		if (settings.fallbackBehavior == 1) {
+			spdlog::info("fulfilledBy: Soft fallback showing '{}' (tolerance={})", nodeId, tolerance);
+			return true;
+		}
+		if (settings.fallbackBehavior == 2) {
+			spdlog::warn("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
+		} else {
+			spdlog::info("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
+		}
 		return false;
 	}
 }

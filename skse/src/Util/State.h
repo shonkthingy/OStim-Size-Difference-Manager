@@ -13,4 +13,8 @@ namespace SizeDiff::State
 	/// OStim thread that belongs to the player (used when UI / fulfilledBy run on a different OS thread).
 	void SetPlayerThreadId(uint32_t threadId);
 	uint32_t GetPlayerThreadId();
+
+	/// Best-effort thread id for graph hooks (updated from OStim thread listeners).
+	void NotifyThreadActive(uint32_t threadId);
+	uint32_t GetLastActiveThreadId();
 }

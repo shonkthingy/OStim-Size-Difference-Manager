@@ -88,6 +88,7 @@ namespace
 void SizeDiff::SceneCache::StartBackgroundScan()
 {
 	std::thread([] {
+		SizeDiff::SceneCache::Get()->LoadUserOverrides();
 		auto data = LoadSceneMetadata();
 		const auto total = data.size();
 		SizeDiff::SceneCache::Get()->SetData(std::move(data));

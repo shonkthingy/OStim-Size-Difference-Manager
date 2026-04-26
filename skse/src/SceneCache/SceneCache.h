@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace SizeDiff::SceneCache
@@ -18,6 +19,7 @@ namespace SizeDiff::SceneCache
 	class Cache final
 	{
 	public:
+		void LoadUserOverrides();
 		void SetData(std::unordered_map<std::string, SceneScaleInfo> entries);
 		bool IsReady() const;
 		bool Matches(const std::string& sceneId, const std::vector<float>& actorScales, float tolerance) const;
@@ -25,6 +27,8 @@ namespace SizeDiff::SceneCache
 
 	private:
 		std::unordered_map<std::string, SceneScaleInfo> _entries;
+		std::unordered_set<std::string> _exemptions;
+		std::unordered_map<std::string, float> _overrides;
 		bool _ready{ false };
 	};
 

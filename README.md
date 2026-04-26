@@ -12,8 +12,10 @@ Scenes that were authored for same-height actors are hidden or skipped when the 
 |---|---|
 | **Skyrim SE / AE** | Both supported via Address Library |
 | **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/62852)** | Required |
-| **[OStim NG](https://www.nexusmods.com/skyrimspecialedition/mods/76724)** | Tested with **7.4.0.3**; see *OStim Version Support* below |
+| **[OStim NG](https://www.nexusmods.com/skyrimspecialedition/mods/76724)** | Tested with **7.4.0.3**; see *How it works* below |
 | **[Address Library for SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required |
+| **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/100062)** | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it). |
+| **Size-Difference Animations** | *Soft Requirement*. This mod filters scenes so that size-difference actors only use size-difference animations. You will need actual OStim animation packs designed for different sized actors installed for this to be useful. |
 
 If `OStim.dll` is not present, the plugin loads but stays completely idle. If the OStim version is unrecognised, hooks are not installed and the plugin will log a warning.
 
@@ -21,9 +23,10 @@ If `OStim.dll` is not present, the plugin loads but stays completely idle. If th
 
 ## Installation
 
-1. Copy `data/SKSE/Plugins/OStimSizeDifferenceManager.dll` into your `Data/SKSE/Plugins/` folder (or install via your mod manager).
-2. Optionally copy `data/SKSE/Plugins/OStimSizeDifferenceManager.ini` to the same location to configure behaviour.
-3. Launch the game via SKSE.
+1. Install all hard requirements listed above.
+2. Download the latest release `.zip` archive.
+3. Install via your mod manager (Vortex/MO2), or manually extract the contents into your Skyrim `Data/` directory.
+4. **Crucial Step:** Open OStim's in-game Alignment settings and turn **OFF** OStim's built-in auto-scaling feature. This mod is designed to work with actors at their natural persistent scales.
 
 Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceManager.log`
 
@@ -31,18 +34,51 @@ Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceMa
 
 ## Configuration
 
-INI path: `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`
+Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`.
 
-| Key | Values | Default | Notes |
-|---|---|---|---|
-| `Mode` | `0` = Off, `1` = Soft (not yet implemented), `2` = Strict | `2` | Controls filtering behaviour |
-| `Tolerance` | float (e.g. `0.1`) | `0.1` | Allowed deviation between runtime height spread and a scene's authored scale difference |
+| Option | Default | Description |
+|---|---|---|
+| **Mode** | `Strict` | `Off` = no filtering. `Strict` = only allow scenes matching actor height spread. `Soft` = Not yet implemented. |
+| **Tolerance** | `0.1` | Max allowed deviation between actors' actual height spread and the scene's authored spread. |
+| **ApplyToPlayerScenes** | `True` | Filter scenes involving the player character. |
+| **ApplyToNpcScenes** | `True` | Filter scenes only involving NPCs. |
+| **ApplyInAutoMode** | `True` | Filter scenes during OStim's automatic progression. |
+| **FallbackBehavior** | `0` | Action when no perfect scene is found. (Used by advanced filtering, mostly defaults to strict rejection currently). |
 
-Additional keys (`ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, `FallbackBehavior`) are parsed but **not yet connected** — reserved for future work.
+### Exemptions & Overrides
+The SKSE Menu Framework includes a dedicated tab to visually browse all installed animation packs. From there, you can:
+- **Exempt** complete packs or individual scenes (allowing them to play regardless of height difference).
+- **Override** the authored scale difference of a specific animation if the mod author tagged it incorrectly.
+
+These settings are saved to `Data/SKSE/Plugins/OStimSizeDifferenceManager_Overrides.json`.
 
 ---
 
-## What It Does
+## Limitations
+
+### INI settings only without SKSE Menu Framework
+If you do not install SKSE Menu Framework, there is no in-game settings panel. All configuration is done via the INI file and requires a game restart to take effect.
+
+### Ratio vs Absolute Differences
+Currently, the mod calculates size differences as an absolute value (e.g. `Actor 1 (1.0) - Actor 2 (0.8) = 0.2`). This means the mod cannot currently differentiate between a "Larger Dom" and a "Larger Sub". An animation authored for a Large Sub may incorrectly play for a Large Dom if the absolute difference is exactly the same.
+
+### Disabled OStim Auto-Scaling
+As noted in the installation steps, OStim's auto-scaling feature is not fully supported and should be turned off.
+
+---
+
+## ToDo
+
+A full and detailed list of planned features, bug fixes, and architectural overhauls can be found in the `TODO.md` file in the repository. A brief summary of upcoming plans:
+
+- Calculate sizes via Ratio rather than Absolute Difference (to fix Large Dom vs Large Sub issues).
+- Overhaul the SKSE Menu Framework UX (Dual search bars, hide empty packs, inline inputs, and pack-level mass actions).
+- Implement Soft Mode fallback handlers.
+- Support OStim Auto-Scaling workflows.
+
+---
+
+## How It Works
 
 ### Scene filtering
 
@@ -62,7 +98,7 @@ A scene is allowed when: `|runtime spread − authored difference| ≤ Tolerance
 
 Scenes with no `scale` data (all actors default to `1.0`) get an authored difference of `0.0`, so they are only approved when actors are similarly sized.
 
-Unknown scenes (not found in the cache) are also treated as authored difference `0.0` — they are rejected when actors have a meaningful size difference.
+Unknown scenes (not found in the cache) are also treated as authored difference `0.0` — they are rejected when actors have a meaningful size difference. Base OStim hub scenes (prefixed with `ostim`) bypass this logic natively to preserve UI navigation.
 
 ### Filtering scope
 
@@ -76,44 +112,7 @@ The plugin intercepts three call sites inside OStim NG via [MinHook](https://git
 
 The `fulfilledBy` hook filters what appears in the navigation menu — incompatible scenes are hidden before they are displayed, so the player cannot manually select them either.
 
----
-
-## Current Limitations
-
-### Navigation-only / hub nodes lack scale metadata
-
-Some scenes act purely as navigation hubs or position-change intermediaries (e.g. `ostim2psittingmf`, standing-apart transitions). These do not carry per-actor `scale` data in their JSON, so the plugin treats them as authored difference `0.0`.
-
-**Effect:** If the participating actors have a meaningful height difference and the hub's authored difference is `0.0`, the hub node is filtered — meaning the player may not be able to navigate back to the scene browser from inside a size-difference scene. This is non-gamebreaking (the scene continues) but limits navigation flexibility.
-
-**Planned fix:** Detect and exempt pure transition/hub nodes from the size-difference filter so navigation control is always available.
-
-### Soft mode not implemented
-
-`Mode=1` is reserved but has no distinct behaviour yet — it falls through to the same path as `Mode=0` (off). Strict mode (`Mode=2`) is the only active filtering path.
-
-### OStim version support is manual
-
-Hook addresses are resolved by byte pattern from `signatures.json`. New OStim builds require a pattern update before hooks will install. See *OStim Version Support* below.
-
-### INI settings only — no in-game UI
-
-There is currently no MCM or in-game settings panel. All configuration is done via the INI file and requires a game restart to take effect.
-
----
-
-## Next Steps
-
-- [ ] **Exempt hub/transition nodes** from size-difference filtering so the player can always navigate back
-- [ ] **Implement Soft mode** — allow scenes with a small mismatch rather than hard-rejecting them
-- [ ] **MCM / in-game settings** — configure mode and tolerance without editing the INI file
-- [ ] **Broader OStim version support** — automate or simplify pattern extraction for new OStim releases
-- [ ] **Wire remaining INI flags** — `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, `FallbackBehavior`
-- [ ] **Expand scene metadata coverage** — work with animation authors to ensure hub/transition nodes carry correct scale data
-
----
-
-## OStim Version Support
+### OStim Version Support
 
 Hook addresses are resolved in this order:
 1. **PDB symbol lookup** (if debug symbols for `OStim.dll` are available)
@@ -121,11 +120,7 @@ Hook addresses are resolved in this order:
 
 Currently tested and supported: **7.4.0.0**, **7.4.0.3**
 
-To add support for a new OStim version:
-1. Add the four-part version to the known-good list in `skse/src/AddressResolution/VersionGate.cpp`.
-2. Extract byte patterns for `getRandomNode`, `getRandomNodeInRange`, and `fulfilledBy` from the new `OStim.dll`.
-3. Add matching entries in `signatures.json`.
-4. Rebuild, test in-game, and verify hook installation in the SKSE log.
+To add support for a new OStim version, its version string must be whitelisted in `skse/src/AddressResolution/VersionGate.cpp` and its byte patterns added to `signatures.json`.
 
 ---
 
@@ -158,6 +153,4 @@ The plugin logs `_MSC_FULL_VER` and `_MSVC_STL_VERSION` on load to help diagnose
 
 ## License
 
-GPL — matches OStim NG.
-
----
+GPL 3.0

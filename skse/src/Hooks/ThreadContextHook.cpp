@@ -5,6 +5,7 @@
 #include "Util/Tls.h"
 
 #include "spdlog/spdlog.h"
+#include <sstream>
 
 namespace
 {
@@ -43,13 +44,16 @@ namespace
             auto scales = ScalesFromThread(thread);
             if (scales.empty()) return;
 
-            spdlog::debug("OStim thread {} started with {} actors, scales: {}",
-                thread->getThreadID(), scales.size(),
-                [&] {
-                    std::string s;
-                    for (float f : scales) s += std::to_string(f) + " ";
-                    return s;
-                }());
+            std::ostringstream scaleStream;
+            for (std::size_t i = 0; i < scales.size(); ++i) {
+                if (i > 0) {
+                    scaleStream << ' ';
+                }
+                scaleStream << scales[i];
+            }
+
+            spdlog::info("OStim thread {} started with {} actors, scales: {}",
+                thread->getThreadID(), scales.size(), scaleStream.str());
 
             // Push onto TLS so the getRandomNode hook can read it.
             // getRandomNode is called synchronously during thread start, so

@@ -44,7 +44,13 @@ namespace
 				if (!node) {
 					return false;
 				}
-				return cache->Matches(node->getNodeID(), scales, tolerance);
+				bool match = cache->Matches(node->getNodeID(), scales, tolerance);
+				if (!match) {
+					spdlog::info("getRandomNode: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);
+				} else {
+					spdlog::trace("getRandomNode: Approved {}", node->getNodeID());
+				}
+				return match;
 			};
 
 			return g_originalGetRandomNode(furnitureType, std::move(actorConditions), std::move(wrapped));
@@ -74,9 +80,15 @@ bool SizeDiff::Hooks::InstallGetRandomNodeHook()
 		return false;
 	}
 
-	SKSE::AllocTrampoline(128);
-	auto& trampoline = SKSE::GetTrampoline();
-	g_originalGetRandomNode = reinterpret_cast<GetRandomNode_t>(trampoline.write_call<5>(*target, reinterpret_cast<uintptr_t>(HookedGetRandomNode)));
-	spdlog::info("Installed getRandomNode hook at 0x{:X}", *target);
+	const auto targetAddr = reinterpret_cast<void*>(*target);
+	if (MH_CreateHook(targetAddr, reinterpret_cast<void*>(&HookedGetRandomNode), reinterpret_cast<void**>(&g_originalGetRandomNode)) != MH_OK) {
+		spdlog::error("Failed to create hook for getRandomNode");
+		return false;
+	}
+	if (MH_EnableHook(targetAddr) != MH_OK) {
+		spdlog::error("Failed to enable hook for getRandomNode");
+		return false;
+	}
+	spdlog::info("Installed getRandomNode hook (MinHook) at 0x{:X}", *target);
 	return true;
 }

@@ -20,6 +20,7 @@ else ()
     message(FATAL_ERROR "CommonLibSSE-NG not found. Expected submodule at ../extern/CommonLibSSE-NG")
 endif ()
 
+find_package(minhook CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
@@ -43,11 +44,13 @@ if (TARGET CommonLibSSE::CommonLibSSE)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
             CommonLibSSE::CommonLibSSE
+            minhook::minhook
             spdlog::spdlog
             nlohmann_json::nlohmann_json)
 else ()
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
+            minhook::minhook
             spdlog::spdlog
             nlohmann_json::nlohmann_json)
 endif ()

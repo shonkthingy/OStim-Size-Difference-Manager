@@ -40,6 +40,12 @@ namespace
 
 SKSEPluginLoad(const SKSE::LoadInterface* skse)
 {
+	if (const auto mh = MH_Initialize(); mh != MH_OK) {
+		SizeDiff::Logger::Init();
+		spdlog::error("MH_Initialize failed: {}", static_cast<int>(mh));
+		return false;
+	}
+
 	SizeDiff::Logger::Init();
 	SKSE::Init(skse);
 

@@ -1,11 +1,11 @@
 # OStim Size Difference Manager - TODOs
 
 ## 1. UI / SKSE Menu Framework Overhaul
-- [ ] **Dual Search Bars:** Implement side-by-side search bars (one for Pack Name, one for Animation Name).
-- [ ] **Hide Empty Packs:** When searching by animation name, hide pack tree-nodes that contain 0 matching results so the user doesn't have to scroll through a massive list of empty folders.
-- [ ] **Inline Override Inputs:** Remove the "Set Override" popup. Instead, place a number input box directly on the animation row next to the "Override" button so users can quickly type a value and apply it.
-- [ ] **Pack-Level Mass Actions:** Add "Exempt Pack" and "Override Pack" (with an inline input box) buttons at the pack-folder level to set a new default for all animations inside that folder.
-- [ ] **Aesthetics & Formatting:** Group options under clearer headings, add spacing, and make the menu look cleaner overall.
+- [x] **Dual Search Bars:** Implement side-by-side search bars (one for Pack Name, one for Animation Name).
+- [x] **Hide Empty Packs:** When searching by animation name, hide pack tree-nodes that contain 0 matching results so the user doesn't have to scroll through a massive list of empty folders.
+- [x] **Inline Override Inputs:** Remove the "Set Override" popup. Instead, place a number input box directly on the animation row next to the "Override" button so users can quickly type a value and apply it.
+- [x] **Pack-Level Mass Actions:** Add "Exempt Pack" and "Override Pack" (with an inline input box) buttons at the pack-folder level to set a new default for all animations inside that folder.
+- [x] **Aesthetics & Formatting:** Group options under clearer headings, add spacing, and make the menu look cleaner overall.
 
 ## 2. Core Logic Update: Ratio vs. Absolute Difference
 - [ ] **Switch from Difference to Ratio:** A flat absolute difference (e.g. `0.2`) treats `Actor 1 (1.0) & Actor 2 (0.8)` the same as `Actor 1 (0.8) & Actor 2 (1.0)`. Changing to a **Size Ratio** (e.g. `0.8` vs `1.25`) allows the mod to differentiate between a "Larger Dom" and a "Larger Sub".

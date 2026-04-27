@@ -4,6 +4,12 @@ An [SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/62852) plugin for 
 
 Scenes that were authored for same-height actors are hidden or skipped when the participating actors have a meaningful size difference — keeping immersion intact without requiring changes to OStim itself.
 
+**1.0 highlights**
+
+- **Filtering Mode (4 states):** **Off** (no filtering), **Strict** (hard filter only matching scenes), **Soft** (try Strict first; if nothing matches, fall back to the closest match), and **Debug** (log decisions but do not block scenes). Together, Strict and Soft let you run a hard size match or a “best available” fallback.
+- **SKSE Menu UI:** Search filters (including dual search for pack vs animation), hide-empty-packs, inline override inputs, pack-level mass actions, and a cleaner layout—browse packs, set exemptions and overrides, and adjust **Mode** without leaving the game.
+- **Live hooks:** Random-node and auto-progression paths pick up INI and menu changes while you play; no full game restart needed when you change filtering behaviour.
+
 ---
 
 ## Requirements
@@ -24,8 +30,8 @@ If `OStim.dll` is not present, the plugin loads but stays completely idle. If th
 ## Installation
 
 1. Install all hard requirements listed above.
-2. Download the latest release `.zip` archive.
-3. Install via your mod manager (Vortex/MO2), or manually extract the contents into your Skyrim `Data/` directory.
+2. Download the latest release `.zip` archive. The package mirrors the **Skyrim `Data/` layout** (e.g. `Data/SKSE/Plugins/…`); install so those paths merge into your game’s `Data` folder.
+3. Install via your mod manager (Vortex/MO2), or manually extract the contents into your Skyrim **`Data/`** directory (not the game root by itself—`Data` is the merge target).
 4. **Crucial Step:** Open OStim's in-game Alignment settings and turn **OFF** OStim's built-in auto-scaling feature. This mod is designed to work with actors at their natural persistent scales.
 
 Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceManager.log`
@@ -34,11 +40,20 @@ Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceMa
 
 ## Configuration
 
-Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`.
+**Filtering Mode** is a **4-state** system (also labelled **Mode** in the INI and menu):
+
+| State | INI `Mode` | Behaviour |
+| --- | --- | --- |
+| **Off** | `0` | No size filtering. |
+| **Strict** | `1` | Hard filter: only scenes within tolerance. |
+| **Soft** | `2` | Two-pass: Strict first; if no match, **closest match** fallback. |
+| **Debug** | `3` | Log filtering logic but allow any scene. |
+
+Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`. With the menu installed, these options apply on the fly together with the hooks below (no restart required for **Mode** / tolerance / scope toggles in normal use).
 
 | Option | Default | Description |
 |---|---|---|
-| **Mode** | `1` (Strict) | `0` Off, `1` Strict, `2` Soft (closest match), `3` Debug (log but allow any). See in-game tooltips. |
+| **Mode** | `1` (Strict) | The four **Filtering Mode** values above. See in-game tooltips. |
 | **Tolerance** | `0.1` | Max allowed deviation between actors' actual height spread and the scene's authored spread. |
 | **ApplyToPlayerScenes** | `True` | Filter scenes involving the player character. |
 | **ApplyToNpcScenes** | `True` | Filter scenes only involving NPCs. |
@@ -71,12 +86,11 @@ As noted in the installation steps, OStim's auto-scaling feature is not fully su
 
 ## ToDo
 
-A full and detailed list of planned features, bug fixes, and architectural overhauls can be found in the `TODO.md` file in the repository. A brief summary of upcoming plans:
+A full list of follow-up work, edge cases, and future ideas is in `TODO.md`. **1.0** delivers the 4-state Filtering Mode (including **Soft** closest-match), the SKSE menu UX overhaul, and live hook behaviour. Still on the radar, for example:
 
-- Calculate sizes via Ratio rather than Absolute Difference (to fix Large Dom vs Large Sub issues).
-- Overhaul the SKSE Menu Framework UX (Dual search bars, hide empty packs, inline inputs, and pack-level mass actions).
-- (Done) Unified Mode enum covers strict / soft / debug; separate fallback INI is removed.
-- Support OStim Auto-Scaling workflows.
+- Ratio-based matching (vs absolute difference) and Dom/Sub role awareness.
+- Broader OStim auto-scaling compatibility.
+- Hub/transition fixes, 3+ actor support, and maintenance items as listed in `TODO.md`.
 
 ---
 
@@ -111,6 +125,8 @@ The plugin intercepts three call sites inside OStim NG via [MinHook](https://git
 | `Graph::GraphTable::getRandomNode` | Initial / autonomous scene selection |
 | `Graph::Node::getRandomNodeInRange` | Automatic scene progression (AI-driven) |
 | `Graph::Navigation::fulfilledBy` | **Player-controlled UI menus** (base OStim UI and OStim Prism) |
+
+These call sites use the current **Filtering Mode**, tolerance, and scope when they run, so **random** picks and **auto-progression** reflect INI and menu changes **without restarting the game**.
 
 The `fulfilledBy` hook filters what appears in the navigation menu — incompatible scenes are hidden before they are displayed, so the player cannot manually select them either.
 

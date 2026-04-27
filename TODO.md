@@ -17,7 +17,7 @@
 
 - [ ] **Hub/Transition Node Exemption:** Natively detect and exempt pure transition/hub nodes from scale filtering so the player can always navigate back to previous menu tiers (without relying solely on the `"ostim"` prefix workaround).
 - [x] **Soft mode (`Mode=2`):** Closest-match pass when strict finds nothing; see `RandomNodeTwoPass.h`.
-- [ ] **OStim Auto-Scaling Compatibility:** Investigate making the mod play nicely with OStim's built-in auto-scaling feature (currently, the mod assumes auto-scaling is OFF).
+- [ ] **OStim scaling compatibility:** Investigate smoother behaviour when users leave OStim's native scaling enabled instead of the **highly recommended** **Disable Scaling** option in Alignment MCM (combining default OStim scaling with this mod's filtering tends to produce janky alignments, but it does not completely break the mod).
 - [ ] **Automated Translation/Position Offsets (Low Priority/Hard):** If a 1.0 & 0.8 couple plays an animation authored for 1.2 & 1.0, the ratio is the same (0.8), but the absolute scale means their origin translation alignments will be off. Look into automatically adjusting their Z/Y translation offsets based on the absolute scale delta.
 
 ## 4. Maintenance / Architecture

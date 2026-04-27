@@ -1,6 +1,6 @@
 # OStim Size Difference Manager
 
-An [SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/62852) plugin for **Skyrim Special Edition / Anniversary Edition** that integrates with **[OStim NG](https://www.nexusmods.com/skyrimspecialedition/mods/76724)** to filter scene and animation selection based on the actual height difference between actors in a scene.
+An [SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/30379) plugin for **Skyrim Special Edition / Anniversary Edition** that integrates with **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)** to filter scene and animation selection based on the actual height difference between actors in a scene.
 
 Scenes that were authored for same-height actors are hidden or skipped when the participating actors have a meaningful size difference — keeping immersion intact without requiring changes to OStim itself.
 
@@ -17,10 +17,10 @@ Scenes that were authored for same-height actors are hidden or skipped when the 
 | Requirement | Notes |
 |---|---|
 | **Skyrim SE / AE** | Both supported via Address Library |
-| **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/62852)** | Required |
-| **[OStim NG](https://www.nexusmods.com/skyrimspecialedition/mods/76724)** | Tested with **7.4.0.3**; see *How it works* below |
-| **[Address Library for SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required |
-| **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/100062)** | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it). |
+| **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/30379)** | Required |
+| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)** | Tested with **7.4.0.3**; see *How it works* below |
+| **[Address Library For SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required |
+| **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/120352)** | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it). |
 | **Size-Difference Animations** | *Soft Requirement*. This mod filters scenes so that size-difference actors only use size-difference animations. You will need actual OStim animation packs designed for different sized actors installed for this to be useful. |
 
 If `OStim.dll` is not present, the plugin loads but stays completely idle. If the OStim version is unrecognised, hooks are not installed and the plugin will log a warning.
@@ -32,7 +32,11 @@ If `OStim.dll` is not present, the plugin loads but stays completely idle. If th
 1. Install all hard requirements listed above.
 2. Download the latest release `.zip` archive. The package mirrors the **Skyrim `Data/` layout** (e.g. `Data/SKSE/Plugins/…`); install so those paths merge into your game’s `Data` folder.
 3. Install via your mod manager (Vortex/MO2), or manually extract the contents into your Skyrim **`Data/`** directory (not the game root by itself—`Data` is the merge target).
-4. **Crucial Step:** Open OStim's in-game Alignment settings and turn **OFF** OStim's built-in auto-scaling feature. This mod is designed to work with actors at their natural persistent scales.
+4. **Scaling recommendation:** In OStim's **Alignment** MCM, it is **highly recommended** to enable **"Disable Scaling"** so actors keep their natural persistent scales while this mod filters scenes. Leaving OStim's native scaling enabled does not completely break this mod, but combining default OStim scaling with this mod's filtering often results in janky alignments.
+
+## Uninstallation / Mid-game safety
+
+Because this mod is a pure SKSE DLL with no `.esp`, `.esl`, or Papyrus scripts, it is **safe to install or uninstall mid-playthrough.** For extra caution, avoid uninstalling while an OStim scene is actively running.
 
 Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceManager.log`
 
@@ -79,8 +83,8 @@ If you do not install SKSE Menu Framework, there is no in-game settings panel. A
 ### Ratio vs Absolute Differences
 Currently, the mod calculates size differences as an absolute value (e.g. `Actor 1 (1.0) - Actor 2 (0.8) = 0.2`). This means the mod cannot currently differentiate between a "Larger Dom" and a "Larger Sub". An animation authored for a Large Sub may incorrectly play for a Large Dom if the absolute difference is exactly the same.
 
-### Disabled OStim Auto-Scaling
-As noted in the installation steps, OStim's auto-scaling feature is not fully supported and should be turned off.
+### OStim "Disable Scaling" recommendation
+As noted in the installation steps, it is **highly recommended** to enable **"Disable Scaling"** in OStim's Alignment MCM. Native OStim scaling left on can combine with this mod's filtering in ways that produce inconsistent alignments.
 
 ---
 
@@ -89,7 +93,7 @@ As noted in the installation steps, OStim's auto-scaling feature is not fully su
 A full list of follow-up work, edge cases, and future ideas is in `TODO.md`. **1.0** delivers the 4-state Filtering Mode (including **Soft** closest-match), the SKSE menu UX overhaul, and live hook behaviour. Still on the radar, for example:
 
 - Ratio-based matching (vs absolute difference) and Dom/Sub role awareness.
-- Broader OStim auto-scaling compatibility.
+- Smoother behaviour when OStim's native scaling is left enabled (vs. the recommended **Disable Scaling** setting).
 - Hub/transition fixes, 3+ actor support, and maintenance items as listed in `TODO.md`.
 
 ---
@@ -118,7 +122,7 @@ Unknown scenes (not found in the cache) are also treated as authored difference 
 
 ### Filtering scope
 
-The plugin intercepts three call sites inside OStim NG via [MinHook](https://github.com/TsudaKageyu/minhook):
+The plugin intercepts three call sites inside OStim Standalone via [MinHook](https://github.com/TsudaKageyu/minhook):
 
 | Hook | Where it applies |
 |---|---|

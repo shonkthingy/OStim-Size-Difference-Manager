@@ -26,6 +26,8 @@ namespace SizeDiff::SceneCache
 		void SetData(std::unordered_map<std::string, SceneScaleInfo> entries);
 		bool IsReady() const;
 		bool Matches(const std::string& sceneId, const std::vector<float>& actorScales, float tolerance) const;
+		// Absolute scale-diff distance from actor targets for soft-mode ordering (0 = best; exemptions/overrides/unknown handled like Matches)
+		float SoftDistanceFromActors(const std::string& sceneId, const std::vector<float>& actorScales) const;
 		std::size_t SceneCount() const;
 
 		void AddExemption(std::string sceneId);

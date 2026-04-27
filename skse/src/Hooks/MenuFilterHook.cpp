@@ -43,7 +43,7 @@ namespace
 		}
 
 		const auto settings = SizeDiff::Config::Get();
-		if (settings.mode != SizeDiff::Config::Mode::Strict) {
+		if (settings.mode == SizeDiff::Config::Mode::Off) {
 			return true;
 		}
 
@@ -54,7 +54,7 @@ namespace
 
 		const auto scales = SizeDiff::State::GetScales(contextThread);
 		if (scales.empty()) {
-			spdlog::trace("fulfilledBy: Strict mode but no scales for thread {} in State; allowing navigation entry", contextThread);
+			spdlog::trace("fulfilledBy: No scales for thread {} in State; allowing navigation entry", contextThread);
 			return true;
 		}
 
@@ -69,16 +69,20 @@ namespace
 			spdlog::trace("fulfilledBy: Scene '{}' matches scales", nodeId);
 			return true;
 		}
-		if (settings.fallbackBehavior == 1) {
-			spdlog::info("fulfilledBy: Soft fallback showing '{}' (tolerance={})", nodeId, tolerance);
+
+		switch (settings.mode) {
+		case SizeDiff::Config::Mode::Strict:
+			spdlog::info("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
+			return false;
+		case SizeDiff::Config::Mode::Soft:
+			spdlog::info("fulfilledBy: Soft: showing '{}' despite scale mismatch (tolerance={})", nodeId, tolerance);
+			return true;
+		case SizeDiff::Config::Mode::Debug:
+			spdlog::warn("fulfilledBy: Debug: scale mismatch for '{}', but allowing (tolerance={})", nodeId, tolerance);
+			return true;
+		default:
 			return true;
 		}
-		if (settings.fallbackBehavior == 2) {
-			spdlog::warn("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
-		} else {
-			spdlog::info("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
-		}
-		return false;
 	}
 }
 

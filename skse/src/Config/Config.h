@@ -8,8 +8,9 @@ namespace SizeDiff::Config
 	enum class Mode
 	{
 		Off = 0,
-		Soft = 1,
-		Strict = 2
+		Strict = 1,
+		Soft = 2,
+		Debug = 3
 	};
 
 	struct Settings
@@ -19,7 +20,6 @@ namespace SizeDiff::Config
 		bool applyToPlayerScenes{ true };
 		bool applyToNpcScenes{ true };
 		bool applyInAutoMode{ true };
-		int fallbackBehavior{ 0 };  // 0 widen, 1 allow any, 2 refuse(log)
 	};
 
 	void Load();

@@ -38,12 +38,11 @@ Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or 
 
 | Option | Default | Description |
 |---|---|---|
-| **Mode** | `Strict` | `Off` = no filtering. `Strict` = only allow scenes matching actor height spread. `Soft` = Not yet implemented. |
+| **Mode** | `1` (Strict) | `0` Off, `1` Strict, `2` Soft (closest match), `3` Debug (log but allow any). See in-game tooltips. |
 | **Tolerance** | `0.1` | Max allowed deviation between actors' actual height spread and the scene's authored spread. |
 | **ApplyToPlayerScenes** | `True` | Filter scenes involving the player character. |
 | **ApplyToNpcScenes** | `True` | Filter scenes only involving NPCs. |
 | **ApplyInAutoMode** | `True` | Filter scenes during OStim's automatic progression. |
-| **FallbackBehavior** | `0` | Action when no perfect scene is found. (Used by advanced filtering, mostly defaults to strict rejection currently). |
 
 ### Exemptions & Overrides
 The SKSE Menu Framework includes a dedicated tab to visually browse all installed animation packs. From there, you can:
@@ -76,7 +75,7 @@ A full and detailed list of planned features, bug fixes, and architectural overh
 
 - Calculate sizes via Ratio rather than Absolute Difference (to fix Large Dom vs Large Sub issues).
 - Overhaul the SKSE Menu Framework UX (Dual search bars, hide empty packs, inline inputs, and pack-level mass actions).
-- Implement Soft Mode fallback handlers.
+- (Done) Unified Mode enum covers strict / soft / debug; separate fallback INI is removed.
 - Support OStim Auto-Scaling workflows.
 
 ---

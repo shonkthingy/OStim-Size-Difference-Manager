@@ -5,6 +5,7 @@
 #include "AddressResolution/VersionGate.h"
 #include "Config/Config.h"
 #include "Hooks/FilterContext.h"
+#include "Hooks/RandomNodeTwoPass.h"
 #include "OStimTypes/ActorCondition.h"
 #include "OStimTypes/Node.h"
 #include "SceneCache/SceneCache.h"
@@ -35,7 +36,7 @@ namespace
 		}
 
 		const auto settings = SizeDiff::Config::Get();
-		if (settings.mode != SizeDiff::Config::Mode::Strict) {
+		if (settings.mode == SizeDiff::Config::Mode::Off) {
 			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
 		}
 
@@ -51,33 +52,15 @@ namespace
 
 		const auto cache = SizeDiff::SceneCache::Get();
 
-		auto wrapped = [original = std::move(nodeCondition), cache, scales](Graph::Node* node) -> bool {
-			if (original && !original(node)) {
-				return false;
-			}
-			if (!node) {
-				return false;
-			}
-			const auto live = SizeDiff::Config::Get();
-			const float tolerance = live.tolerance;
-			const bool match = cache->Matches(node->getNodeID(), scales, tolerance);
-			if (match) {
-				spdlog::trace("getRandomNodeInRange: Approved {}", node->getNodeID());
-				return true;
-			}
-			if (live.fallbackBehavior == 1) {
-				spdlog::info("getRandomNodeInRange: Soft fallback allowing {} (tolerance={})", node->getNodeID(), tolerance);
-				return true;
-			}
-			if (live.fallbackBehavior == 2) {
-				spdlog::warn("getRandomNodeInRange: Refusing {} (scale mismatch, tolerance={})", node->getNodeID(), tolerance);
-			} else {
-				spdlog::info("getRandomNodeInRange: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);
-			}
-			return false;
-		};
-
-		return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(wrapped));
+		return SizeDiff::Hooks::RandomNodeTwoPass::Run(
+			[self, distance](std::vector<Trait::ActorCondition> ac, std::function<bool(Graph::Node*)> pred) -> Graph::Node* {
+				return g_originalGetRandomNodeInRange(self, distance, std::move(ac), std::move(pred));
+			},
+			std::move(actorConditions),
+			std::move(nodeCondition),
+			scales,
+			cache,
+			"getRandomNodeInRange");
 	}
 }
 

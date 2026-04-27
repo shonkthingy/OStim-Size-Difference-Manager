@@ -16,10 +16,10 @@
 3+ person animations are untested, and dedicated functionality for them needs to be worked on.
 
 - [ ] **Hub/Transition Node Exemption:** Natively detect and exempt pure transition/hub nodes from scale filtering so the player can always navigate back to previous menu tiers (without relying solely on the `"ostim"` prefix workaround).
-- [ ] **Implement Soft Mode (`Mode=1`):** Instead of a strict pass/fail, implement logic to allow the "closest match" scene to play if no perfect scenes exist, rather than hard-rejecting.
+- [x] **Soft mode (`Mode=2`):** Closest-match pass when strict finds nothing; see `RandomNodeTwoPass.h`.
 - [ ] **OStim Auto-Scaling Compatibility:** Investigate making the mod play nicely with OStim's built-in auto-scaling feature (currently, the mod assumes auto-scaling is OFF).
 - [ ] **Automated Translation/Position Offsets (Low Priority/Hard):** If a 1.0 & 0.8 couple plays an animation authored for 1.2 & 1.0, the ratio is the same (0.8), but the absolute scale means their origin translation alignments will be off. Look into automatically adjusting their Z/Y translation offsets based on the absolute scale delta.
 
 ## 4. Maintenance / Architecture
 - [ ] **Broader OStim Version Support:** Automate or simplify pattern extraction for new OStim releases (better PDB fallback or dynamic scanning).
-- [ ] **Verify Wired INI Flags:** Confirm `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, and `FallbackBehavior` are behaving exactly as expected after the recent UI wire-up.
+- [ ] **Verify Wired INI Flags:** Confirm `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, and `Mode` (Off / Strict / Soft / Debug) are behaving as expected.

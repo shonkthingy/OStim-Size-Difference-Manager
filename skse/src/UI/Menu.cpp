@@ -76,15 +76,22 @@ namespace SizeDiff::UI
 					ui.mode = Config::Mode::Off;
 				}
 				ImGui::SameLine();
-				if (ImGui::RadioButton("Soft##filterMode", static_cast<int>(ui.mode) == 1)) {
+				if (ImGui::RadioButton("Strict##filterMode", static_cast<int>(ui.mode) == 1)) {
+					ui.mode = Config::Mode::Strict;
+				}
+				ImGui::SameLine();
+				if (ImGui::RadioButton("Soft (Closest Match)##filterMode", static_cast<int>(ui.mode) == 2)) {
 					ui.mode = Config::Mode::Soft;
 				}
 				ImGui::SameLine();
-				if (ImGui::RadioButton("Strict##filterMode", static_cast<int>(ui.mode) == 2)) {
-					ui.mode = Config::Mode::Strict;
+				if (ImGui::RadioButton("Debug (Log but allow any)##filterMode", static_cast<int>(ui.mode) == 3)) {
+					ui.mode = Config::Mode::Debug;
 				}
 				ImGui::SetItemTooltip(
-					"Off = no filtering. Soft = intermediate matching. Strict = only allow scenes matching actor height spread.");
+					"Off: OStim behaves as if this mod were not filtering scenes. "
+					"Strict: reject or hide choices that are outside the height spread tolerance. "
+					"Soft: if nothing matches exactly, use the closest playable scene. "
+					"Debug: same checks as strict, but when nothing matches, log a warning and allow any valid scene (for troubleshooting).");
 
 				ImGui::SliderFloat("Height Difference Tolerance", &ui.tolerance, 0.0F, 0.5F, "%.3f");
 				ImGui::SetItemTooltip(
@@ -105,26 +112,6 @@ namespace SizeDiff::UI
 				ImGui::Checkbox("Filter Auto-Progression", &ui.applyInAutoMode);
 				ImGui::SetItemTooltip(
 					"Filters OStim's automatic scene progression. Turn off if you only want filtering when manually picking scenes.");
-				ImGui::Dummy(ImVec2(0.0F, 6.0F));
-			}
-
-			if (ImGui::CollapsingHeader("Fallback Behaviour", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::Spacing();
-				ImGui::TextUnformatted("Fallback Behaviour:");
-				{
-					const int fb = std::clamp(ui.fallbackBehavior, 0, 2);
-					if (ImGui::RadioButton("Strict (never break rules)##fb", fb == 0)) {
-						ui.fallbackBehavior = 0;
-					}
-					if (ImGui::RadioButton("Soft (allow closest match)##fb", fb == 1)) {
-						ui.fallbackBehavior = 1;
-					}
-					if (ImGui::RadioButton("Debug (log but still allow)##fb", fb == 2)) {
-						ui.fallbackBehavior = 2;
-					}
-				}
-				ImGui::SetItemTooltip(
-					"0 = Strict (never break rules), 1 = Soft (allow closest match), 2 = Debug (log but still allow).");
 				ImGui::Dummy(ImVec2(0.0F, 6.0F));
 			}
 

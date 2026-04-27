@@ -33,7 +33,7 @@ void SizeDiff::Config::Load()
 		const auto key = line.substr(0, eq);
 		const auto value = line.substr(eq + 1);
 		if (key == "Mode") {
-			g_settings.mode = static_cast<Mode>(std::clamp(std::stoi(value), 0, 2));
+			g_settings.mode = static_cast<Mode>(std::clamp(std::stoi(value), 0, 3));
 		} else if (key == "Tolerance") {
 			g_settings.tolerance = std::clamp(std::stof(value), 0.0F, 0.50F);
 		} else if (key == "ApplyToPlayerScenes") {
@@ -42,21 +42,18 @@ void SizeDiff::Config::Load()
 			g_settings.applyToNpcScenes = (value == "1" || value == "true");
 		} else if (key == "ApplyInAutoMode") {
 			g_settings.applyInAutoMode = (value == "1" || value == "true");
-		} else if (key == "FallbackBehavior") {
-			g_settings.fallbackBehavior = std::clamp(std::stoi(value), 0, 2);
 		}
 	}
 
 	const auto mode = static_cast<int>(g_settings.mode);
 
 	spdlog::info(
-		"Config loaded: mode={}, tolerance={}, applyPlayer={}, applyNpc={}, autoMode={}, fallback={}",
+		"Config loaded: mode={}, tolerance={}, applyPlayer={}, applyNpc={}, autoMode={}",
 		mode,
 		g_settings.tolerance,
 		g_settings.applyToPlayerScenes,
 		g_settings.applyToNpcScenes,
-		g_settings.applyInAutoMode,
-		g_settings.fallbackBehavior);
+		g_settings.applyInAutoMode);
 }
 
 void SizeDiff::Config::Save()
@@ -73,7 +70,6 @@ void SizeDiff::Config::Save()
 	out << "ApplyToPlayerScenes=" << (g_settings.applyToPlayerScenes ? "true" : "false") << '\n';
 	out << "ApplyToNpcScenes=" << (g_settings.applyToNpcScenes ? "true" : "false") << '\n';
 	out << "ApplyInAutoMode=" << (g_settings.applyInAutoMode ? "true" : "false") << '\n';
-	out << "FallbackBehavior=" << g_settings.fallbackBehavior << '\n';
 	spdlog::info("Config saved to OStimSizeDifferenceManager.ini");
 }
 

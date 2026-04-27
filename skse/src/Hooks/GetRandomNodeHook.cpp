@@ -5,6 +5,7 @@
 #include "AddressResolution/VersionGate.h"
 #include "Config/Config.h"
 #include "Hooks/FilterContext.h"
+#include "Hooks/RandomNodeTwoPass.h"
 #include "OStimTypes/ActorCondition.h"
 #include "OStimTypes/FurnitureType.h"
 #include "OStimTypes/Node.h"
@@ -33,7 +34,7 @@ namespace
 		}
 
 		const auto settings = SizeDiff::Config::Get();
-		if (settings.mode != SizeDiff::Config::Mode::Strict) {
+		if (settings.mode == SizeDiff::Config::Mode::Off) {
 			return g_originalGetRandomNode(furnitureType, std::move(actorConditions), std::move(nodeCondition));
 		}
 
@@ -49,33 +50,15 @@ namespace
 
 		const auto cache = SizeDiff::SceneCache::Get();
 
-		auto wrapped = [original = std::move(nodeCondition), cache, scales](Graph::Node* node) -> bool {
-			if (original && !original(node)) {
-				return false;
-			}
-			if (!node) {
-				return false;
-			}
-			const auto live = SizeDiff::Config::Get();
-			const float tolerance = live.tolerance;
-			const bool match = cache->Matches(node->getNodeID(), scales, tolerance);
-			if (match) {
-				spdlog::trace("getRandomNode: Approved {}", node->getNodeID());
-				return true;
-			}
-			if (live.fallbackBehavior == 1) {
-				spdlog::info("getRandomNode: Soft fallback allowing {} (tolerance={})", node->getNodeID(), tolerance);
-				return true;
-			}
-			if (live.fallbackBehavior == 2) {
-				spdlog::warn("getRandomNode: Refusing {} (scale mismatch, tolerance={})", node->getNodeID(), tolerance);
-			} else {
-				spdlog::info("getRandomNode: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);
-			}
-			return false;
-		};
-
-		return g_originalGetRandomNode(furnitureType, std::move(actorConditions), std::move(wrapped));
+		return SizeDiff::Hooks::RandomNodeTwoPass::Run(
+			[furnitureType](std::vector<Trait::ActorCondition> ac, std::function<bool(Graph::Node*)> pred) -> Graph::Node* {
+				return g_originalGetRandomNode(furnitureType, std::move(ac), std::move(pred));
+			},
+			std::move(actorConditions),
+			std::move(nodeCondition),
+			scales,
+			cache,
+			"getRandomNode");
 	}
 }
 

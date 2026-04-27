@@ -2,6 +2,8 @@
 
 #include "Matching/HeightMatcher.h"
 
+#include <cmath>
+
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
@@ -120,6 +122,37 @@ bool SizeDiff::SceneCache::Cache::Matches(const std::string& sceneId, const std:
 	}
 
 	return SizeDiff::Matching::MatchesStrict(it->second.diff, actorScales, tolerance);
+}
+
+float SizeDiff::SceneCache::Cache::SoftDistanceFromActors(const std::string& sceneId, const std::vector<float>& actorScales) const
+{
+	std::scoped_lock lock(g_mutex);
+	if (actorScales.empty()) {
+		return 0.0F;
+	}
+
+	const std::string lowercaseId = ToLower(sceneId);
+
+	if (_exemptions.contains(lowercaseId)) {
+		return 0.0F;
+	}
+
+	const auto overrideIt = _overrides.find(lowercaseId);
+	const float actorDiff = SizeDiff::Matching::ComputeDiff(actorScales);
+	if (overrideIt != _overrides.end()) {
+		return std::abs(actorDiff - overrideIt->second);
+	}
+
+	if (lowercaseId.starts_with("ostim")) {
+		return 0.0F;
+	}
+
+	const auto it = _entries.find(lowercaseId);
+	if (it == _entries.end()) {
+		return 0.0F;
+	}
+
+	return std::abs(actorDiff - it->second.diff);
 }
 
 std::size_t SizeDiff::SceneCache::Cache::SceneCount() const

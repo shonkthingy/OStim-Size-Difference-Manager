@@ -56,6 +56,9 @@ These settings are saved to `Data/SKSE/Plugins/OStimSizeDifferenceManager_Overri
 
 ## Limitations
 
+### Multi-actor (3+) scenes
+3+ person animations are untested, and dedicated functionality for them needs to be worked on.
+
 ### INI settings only without SKSE Menu Framework
 If you do not install SKSE Menu Framework, there is no in-game settings panel. All configuration is done via the INI file and requires a game restart to take effect.
 

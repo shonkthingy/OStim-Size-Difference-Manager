@@ -13,6 +13,8 @@
 - [ ] Update `SceneCache` JSON parsing and runtime matching logic to use this new decimal ratio calculation instead of absolute minus difference.
 
 ## 3. Advanced Features & Edge Cases
+3+ person animations are untested, and dedicated functionality for them needs to be worked on.
+
 - [ ] **Hub/Transition Node Exemption:** Natively detect and exempt pure transition/hub nodes from scale filtering so the player can always navigate back to previous menu tiers (without relying solely on the `"ostim"` prefix workaround).
 - [ ] **Implement Soft Mode (`Mode=1`):** Instead of a strict pass/fail, implement logic to allow the "closest match" scene to play if no perfect scenes exist, rather than hard-rejecting.
 - [ ] **OStim Auto-Scaling Compatibility:** Investigate making the mod play nicely with OStim's built-in auto-scaling feature (currently, the mod assumes auto-scaling is OFF).

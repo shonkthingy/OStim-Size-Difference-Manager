@@ -50,25 +50,26 @@ namespace
 		}
 
 		const auto cache = SizeDiff::SceneCache::Get();
-		const float tolerance = settings.tolerance;
 
-		auto wrapped = [original = std::move(nodeCondition), cache, scales, tolerance, settings](Graph::Node* node) -> bool {
+		auto wrapped = [original = std::move(nodeCondition), cache, scales](Graph::Node* node) -> bool {
 			if (original && !original(node)) {
 				return false;
 			}
 			if (!node) {
 				return false;
 			}
+			const auto live = SizeDiff::Config::Get();
+			const float tolerance = live.tolerance;
 			const bool match = cache->Matches(node->getNodeID(), scales, tolerance);
 			if (match) {
 				spdlog::trace("getRandomNodeInRange: Approved {}", node->getNodeID());
 				return true;
 			}
-			if (settings.fallbackBehavior == 1) {
+			if (live.fallbackBehavior == 1) {
 				spdlog::info("getRandomNodeInRange: Soft fallback allowing {} (tolerance={})", node->getNodeID(), tolerance);
 				return true;
 			}
-			if (settings.fallbackBehavior == 2) {
+			if (live.fallbackBehavior == 2) {
 				spdlog::warn("getRandomNodeInRange: Refusing {} (scale mismatch, tolerance={})", node->getNodeID(), tolerance);
 			} else {
 				spdlog::info("getRandomNodeInRange: Rejected {} due to scale difference (tolerance={})", node->getNodeID(), tolerance);

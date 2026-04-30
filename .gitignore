@@ -35,3 +35,6 @@ Thumbs.db
 .DS_Store
 
 # Do not ignore: built plugin DLL under data/SKSE/Plugins/ (commit the shipped artifact)
+
+# Release packages (publish to GitHub Releases, don't track in git)
+OStim-Size-Difference-Manager-*.zip

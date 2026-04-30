@@ -159,6 +159,13 @@ To add support for a new OStim version, its version string must be whitelisted i
 
 ## Changelog
 
+### v1.0.2
+
+- Added detection and handling for scenes with missing actor scale metadata in scene caching/matching flow.
+- Fixed pack-wide override apply behavior so typed values are applied reliably without requiring Enter first.
+
+---
+
 ### v1.0.1
 
 - Exemptions & Overrides UI now uses snapshot-based caching to remove major per-frame overhead.

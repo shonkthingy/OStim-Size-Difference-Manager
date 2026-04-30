@@ -319,7 +319,14 @@ namespace SizeDiff::UI
 
 							ImGui::TableNextColumn();
 							if (hasInfo) {
-								ImGui::Text("%.2f", static_cast<double>(info->diff));
+								if (info->hasMissingActorScale) {
+									ImGui::TextUnformatted("None");
+									ImGui::SetItemTooltip(
+										"Animation does not provide actor scale for one or more actors. "
+										"Matching still uses 1.0 as the practical fallback.");
+								} else {
+									ImGui::Text("%.2f", static_cast<double>(info->diff));
+								}
 							} else {
 								ImGui::TextUnformatted("Hub/Unknown");
 							}

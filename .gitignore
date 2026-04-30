@@ -34,7 +34,8 @@ cmake_install.cmake
 Thumbs.db
 .DS_Store
 
-# Do not ignore: built plugin DLL under data/SKSE/Plugins/ (commit the shipped artifact)
+# Built plugin DLL (avoid staging binary during agent workflow)
+data/SKSE/Plugins/OStimSizeDifferenceManager.dll
 
 # Release packages (publish to GitHub Releases, don't track in git)
 OStim-Size-Difference-Manager-*.zip

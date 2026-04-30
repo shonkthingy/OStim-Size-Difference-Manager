@@ -61,10 +61,13 @@ namespace
 			float minScale = std::numeric_limits<float>::max();
 			float maxScale = std::numeric_limits<float>::lowest();
 			int count = 0;
+			bool hasMissingActorScale = false;
 			for (const auto& actor : doc["actors"]) {
 				float scale = 1.0F;
 				if (actor.is_object() && actor.contains("scale") && actor["scale"].is_number()) {
 					scale = actor["scale"].get<float>();
+				} else {
+					hasMissingActorScale = true;
 				}
 				minScale = std::min(minScale, scale);
 				maxScale = std::max(maxScale, scale);
@@ -88,6 +91,7 @@ namespace
 					.maxScale = maxScale,
 					.diff = maxScale - minScale,
 					.actorCount = count,
+					.hasMissingActorScale = hasMissingActorScale,
 					.packName = std::move(packName)
 				};
 			}

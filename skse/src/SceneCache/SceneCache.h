@@ -18,6 +18,7 @@ namespace SizeDiff::SceneCache
 		float maxScale{ 1.0F };
 		float diff{ 0.0F };
 		int actorCount{ 0 };
+		bool hasMissingActorScale{ false };
 		std::string packName;  // top-level folder under scenes/, e.g. "AnubsPack", "BakaHuman"
 	};
 

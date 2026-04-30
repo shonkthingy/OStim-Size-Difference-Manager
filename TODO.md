@@ -20,6 +20,13 @@
 - [ ] **OStim scaling compatibility:** Investigate smoother behaviour when users leave OStim's native scaling enabled instead of the **highly recommended** **Disable Scaling** option in Alignment MCM (combining default OStim scaling with this mod's filtering tends to produce janky alignments, but it does not completely break the mod).
 - [ ] **Automated Translation/Position Offsets (Low Priority/Hard):** If a 1.0 & 0.8 couple plays an animation authored for 1.2 & 1.0, the ratio is the same (0.8), but the absolute scale means their origin translation alignments will be off. Look into automatically adjusting their Z/Y translation offsets based on the absolute scale delta.
 
-## 4. Maintenance / Architecture
+## 4. Scene Investigator / Editor Tab
+- [ ] **Scene Debug Tab:** Add a new tab to the MCM/menu that shows live info about the **current OStim scene**:
+  - List all actors currently in the scene with their **current scale** values.
+  - Display the **current animation** name / node.
+  - **Manual Scale Override:** Input fields to directly set/adjust the scale of any actor in the scene in real-time.
+  - Any other useful runtime diagnostics (actor slots, roles, furniture type, etc.).
+
+## 5. Maintenance / Architecture
 - [ ] **Broader OStim Version Support:** Automate or simplify pattern extraction for new OStim releases (better PDB fallback or dynamic scanning).
 - [ ] **Verify Wired INI Flags:** Confirm `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, and `Mode` (Off / Strict / Soft / Debug) are behaving as expected.

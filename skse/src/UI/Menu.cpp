@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <unordered_map>
 
@@ -25,48 +27,57 @@ namespace SizeDiff::UI
 		// whenever either SKSEMenuFramework section is drawn (avoids stale g_settings if only one tab runs).
 		static Config::Settings g_configDraft{};
 
-		bool ContainsInsensitive(const std::string& haystack, const char* needle)
+		std::string ToLowerCopy(std::string value)
 		{
-			if (needle == nullptr || needle[0] == '\0') {
+			const auto lower = [](unsigned char c) { return static_cast<char>(std::tolower(c)); };
+			std::transform(value.begin(), value.end(), value.begin(), lower);
+			return value;
+		}
+
+		bool ContainsLowered(const std::string& haystackLower, const std::string& needleLower)
+		{
+			if (needleLower.empty()) {
 				return true;
 			}
-			std::string h = haystack;
-			std::string n(needle);
-			const auto lower = [](unsigned char c) { return static_cast<char>(std::tolower(c)); };
-			std::transform(h.begin(), h.end(), h.begin(), lower);
-			std::transform(n.begin(), n.end(), n.begin(), lower);
-			return h.find(n) != std::string::npos;
+			return haystackLower.find(needleLower) != std::string::npos;
 		}
 
-		std::unordered_map<std::string, float> BuildOverrideLookup(
-			const std::vector<std::pair<std::string, float>>& pairs)
+		std::size_t CountScenesMatchingAnimFilter(const std::vector<std::string>& sceneIds, const std::string& animFilterLower)
 		{
-			std::unordered_map<std::string, float> out;
-			out.reserve(pairs.size());
-			for (const auto& [id, val] : pairs) {
-				out[id] = val;
-			}
-			return out;
-		}
-
-		std::size_t CountScenesMatchingAnimFilter(const std::vector<std::string>& sceneIds, const char* animFilter)
-		{
-			if (animFilter == nullptr || animFilter[0] == '\0') {
+			if (animFilterLower.empty()) {
 				return sceneIds.size();
 			}
 			std::size_t n = 0;
 			for (const auto& sceneId : sceneIds) {
-				if (ContainsInsensitive(sceneId, animFilter)) {
+				if (ContainsLowered(sceneId, animFilterLower)) {
 					++n;
 				}
 			}
 			return n;
 		}
 
+		void UpdateExemptionsPageLifecycle(bool pageVisible, const std::shared_ptr<SceneCache::Cache>& cache)
+		{
+			using clock = std::chrono::steady_clock;
+			static bool wasVisible = false;
+			const auto now = clock::now();
+
+			if (pageVisible) {
+				if (!wasVisible) {
+					cache->LoadUserOverrides();
+				}
+				cache->TryAutosave(now, std::chrono::milliseconds(1500));
+			} else if (wasVisible) {
+				cache->FlushDirtyNow();
+			}
+			wasVisible = pageVisible;
+		}
+
 		void __stdcall RenderSettings()
 		{
 			g_configDraft = Config::Get();
 			auto& ui = g_configDraft;
+			UpdateExemptionsPageLifecycle(false, SceneCache::Get());
 
 			if (ImGui::CollapsingHeader("Filtering Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
 				ImGui::Spacing();
@@ -150,6 +161,7 @@ namespace SizeDiff::UI
 			static std::unordered_map<std::string, float> packOverrideDraft;
 
 			const auto cache = SceneCache::Get();
+			UpdateExemptionsPageLifecycle(true, cache);
 
 			ImVec2 fullAvail{};
 			ImGui::GetContentRegionAvail(&fullAvail);
@@ -176,8 +188,16 @@ namespace SizeDiff::UI
 				return;
 			}
 
-			const auto overridePairs = cache->GetOverridesCopy();
-			const auto overrideLookup = BuildOverrideLookup(overridePairs);
+			const std::string packFilterLower = ToLowerCopy(std::string(packSearchBuffer));
+			const std::string animFilterLower = ToLowerCopy(std::string(animSearchBuffer));
+
+			static SceneCache::UiSnapshot snapshot{};
+			static std::uint64_t lastSnapshotRevision = std::numeric_limits<std::uint64_t>::max();
+			const auto currentRevision = cache->GetRevision();
+			if (lastSnapshotRevision != currentRevision) {
+				snapshot = cache->GetUiSnapshot();
+				lastSnapshotRevision = snapshot.revision;
+			}
 
 			ImVec2 childAvail{};
 			ImGui::GetContentRegionAvail(&childAvail);
@@ -185,14 +205,14 @@ namespace SizeDiff::UI
 			const float childH = std::max(180.0F, childAvail.y - reservedBelow);
 
 			if (ImGui::BeginChild("exemptions_list", ImVec2(0.0F, childH), ImGuiChildFlags_Border)) {
-				const auto packScenes = cache->GetPackScenes();
-				const bool animFilterActive = animSearchBuffer[0] != '\0';
+				const bool animFilterActive = !animFilterLower.empty();
 
-				for (const auto& [packName, sceneIds] : packScenes) {
-					if (!ContainsInsensitive(packName, packSearchBuffer)) {
+				for (const auto& [packName, sceneIds] : snapshot.packScenes) {
+					const std::string packNameLower = ToLowerCopy(packName);
+					if (!ContainsLowered(packNameLower, packFilterLower)) {
 						continue;
 					}
-					if (animFilterActive && CountScenesMatchingAnimFilter(sceneIds, animSearchBuffer) == 0) {
+					if (animFilterActive && CountScenesMatchingAnimFilter(sceneIds, animFilterLower) == 0) {
 						continue;
 					}
 
@@ -205,27 +225,22 @@ namespace SizeDiff::UI
 					bool allExempt = true;
 					bool noneExempt = true;
 					for (const auto& sceneId : sceneIds) {
-						if (!ContainsInsensitive(sceneId, animSearchBuffer)) {
+						if (!ContainsLowered(sceneId, animFilterLower)) {
 							continue;
 						}
-						const bool ex = cache->IsExempt(sceneId);
+						const bool ex = snapshot.exemptions.contains(sceneId);
 						allExempt = allExempt && ex;
 						noneExempt = noneExempt && !ex;
 					}
-					const bool mixedExempt = !allExempt && !noneExempt;
-					bool packExemptVal = allExempt;
+					bool packExemptVal = snapshot.exemptPacks.contains(packNameLower);
+					const bool mixedExempt = !packExemptVal && !allExempt && !noneExempt;
 
 					ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, mixedExempt);
 					if (ImGui::Checkbox("Exempt Pack", &packExemptVal)) {
-						for (const auto& sceneId : sceneIds) {
-							if (!ContainsInsensitive(sceneId, animSearchBuffer)) {
-								continue;
-							}
-							cache->ToggleExemption(sceneId, packExemptVal);
-						}
+						cache->TogglePackExemption(packName, packExemptVal);
 					}
 					ImGui::PopItemFlag();
-					ImGui::SetItemTooltip("When checked, every scene in this pack is always allowed.");
+					ImGui::SetItemTooltip("When checked, this whole pack is exempt and always allowed. Saved to JSON as a pack exemption.");
 
 					float& packOvDraft = packOverrideDraft[packName];
 					ImGui::TextUnformatted("Override pack");
@@ -236,7 +251,7 @@ namespace SizeDiff::UI
 					ImGui::SameLine();
 					if (ImGui::Button("Apply##packOvApply")) {
 						for (const auto& sceneId : sceneIds) {
-							if (!ContainsInsensitive(sceneId, animSearchBuffer)) {
+							if (!ContainsLowered(sceneId, animFilterLower)) {
 								continue;
 							}
 							cache->SetOverride(sceneId, packOvDraft);
@@ -265,7 +280,7 @@ namespace SizeDiff::UI
 						ImGui::TableHeadersRow();
 
 						for (const auto& sceneId : sceneIds) {
-							if (!ContainsInsensitive(sceneId, animSearchBuffer)) {
+							if (!ContainsLowered(sceneId, animFilterLower)) {
 								continue;
 							}
 
@@ -273,25 +288,27 @@ namespace SizeDiff::UI
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted(sceneId.c_str());
 
-							const auto info = cache->GetSceneInfo(sceneId);
-							const float authored = info.has_value() ? info->diff : 0.0F;
+							const auto infoIt = snapshot.entries.find(sceneId);
+							const bool hasInfo = infoIt != snapshot.entries.end();
+							const auto* info = hasInfo ? &infoIt->second : nullptr;
+							const float authored = hasInfo ? info->diff : 0.0F;
 
 							ImGui::TableNextColumn();
-							if (info.has_value()) {
+							if (hasInfo) {
 								ImGui::Text("%.2f", static_cast<double>(info->maxScale));
 							} else {
 								ImGui::TextUnformatted("?");
 							}
 
 							ImGui::TableNextColumn();
-							if (info.has_value()) {
+							if (hasInfo) {
 								ImGui::Text("%.2f", static_cast<double>(info->minScale));
 							} else {
 								ImGui::TextUnformatted("?");
 							}
 
 							ImGui::TableNextColumn();
-							if (info.has_value() && info->actorCount > 2) {
+							if (hasInfo && info->actorCount > 2) {
 								const int extras = info->actorCount - 2;
 								char otherBuf[64]{};
 								std::snprintf(otherBuf, sizeof(otherBuf), "%d extra actor(s)", extras);
@@ -301,7 +318,7 @@ namespace SizeDiff::UI
 							}
 
 							ImGui::TableNextColumn();
-							if (info.has_value()) {
+							if (hasInfo) {
 								ImGui::Text("%.2f", static_cast<double>(info->diff));
 							} else {
 								ImGui::TextUnformatted("Hub/Unknown");
@@ -309,16 +326,25 @@ namespace SizeDiff::UI
 
 							ImGui::TableNextColumn();
 							ImGui::PushID(sceneId.c_str());
-							bool isExempt = cache->IsExempt(sceneId);
-							if (ImGui::Checkbox("##exempt", &isExempt)) {
+							const bool packExempt = snapshot.exemptPacks.contains(packNameLower);
+							bool isExempt = packExempt || snapshot.exemptions.contains(sceneId);
+							if (packExempt) {
+								ImGui::BeginDisabled();
+							}
+							if (ImGui::Checkbox("##exempt", &isExempt) && !packExempt) {
 								cache->ToggleExemption(sceneId, isExempt);
 							}
-							ImGui::SetItemTooltip("When checked, this scene is always allowed.");
+							if (packExempt) {
+								ImGui::EndDisabled();
+							}
+							ImGui::SetItemTooltip(packExempt
+									? "This scene is exempt because its pack is exempt. Uncheck Exempt Pack to edit scene-level exemption."
+									: "When checked, this scene is always allowed.");
 
 							ImGui::TableNextColumn();
 
-							const auto ovIt = overrideLookup.find(sceneId);
-							const bool hasOverrideKey = ovIt != overrideLookup.end();
+							const auto ovIt = snapshot.overrides.find(sceneId);
+							const bool hasOverrideKey = ovIt != snapshot.overrides.end();
 							const float cachedOverride = hasOverrideKey ? ovIt->second : authored;
 							const float effectiveFromCache = hasOverrideKey ? cachedOverride : authored;
 							const bool showAsAuthored =
@@ -374,14 +400,102 @@ namespace SizeDiff::UI
 					ImGui::PopID();
 					ImGui::TreePop();
 				}
+
+				if (!snapshot.unindexedJsonSceneIds.empty()) {
+					ImGui::Separator();
+					if (ImGui::TreeNode("Unindexed (From Overrides JSON)")) {
+						ImGui::TextUnformatted(
+							"These IDs were loaded from JSON but are not present in scanned OStim scene metadata.");
+
+						const ImGuiTableFlags unindexedTableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+							ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+						const float unindexedTableHeight = 220.0F;
+						if (ImGui::BeginTable("unindexed_scenes", 4, unindexedTableFlags, ImVec2(0.0F, unindexedTableHeight))) {
+							ImGui::TableSetupColumn("Scene ID", ImGuiTableColumnFlags_WidthStretch);
+							ImGui::TableSetupColumn("Exempt", ImGuiTableColumnFlags_WidthFixed, 56.0F);
+							ImGui::TableSetupColumn("Override", ImGuiTableColumnFlags_WidthFixed, 170.0F);
+							ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 170.0F);
+							ImGui::TableSetupScrollFreeze(0, 1);
+							ImGui::TableHeadersRow();
+
+							for (const auto& sceneId : snapshot.unindexedJsonSceneIds) {
+								if (!ContainsLowered(sceneId, animFilterLower)) {
+									continue;
+								}
+								ImGui::TableNextRow();
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(sceneId.c_str());
+
+								ImGui::TableNextColumn();
+								ImGui::PushID(sceneId.c_str());
+								bool isExempt = snapshot.exemptions.contains(sceneId);
+								if (ImGui::Checkbox("##unidxExempt", &isExempt)) {
+									cache->ToggleExemption(sceneId, isExempt);
+								}
+
+								ImGui::TableNextColumn();
+								const auto ovIt = snapshot.overrides.find(sceneId);
+								const bool hasOverrideKey = ovIt != snapshot.overrides.end();
+								const float authored = 0.0F;
+								const float cachedOverride = hasOverrideKey ? ovIt->second : authored;
+								const float effectiveFromCache = hasOverrideKey ? cachedOverride : authored;
+								const bool showAsAuthored =
+									!hasOverrideKey || std::fabs(cachedOverride - authored) <= kOverrideEpsilon;
+
+								float& draft = overrideDraftByScene[sceneId];
+								auto& dmeta = overrideDraftMeta[sceneId];
+								if (dmeta.hadKey != hasOverrideKey ||
+									std::fabs(dmeta.effective - effectiveFromCache) > kOverrideEpsilon) {
+									draft = effectiveFromCache;
+									dmeta.hadKey = hasOverrideKey;
+									dmeta.effective = effectiveFromCache;
+								}
+
+								if (showAsAuthored) {
+									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.65F, 0.65F, 0.65F, 1.0F));
+								}
+								ImGui::SetNextItemWidth(78.0F);
+								ImGui::InputFloat("##unidxOv", &draft, 0.0F, 0.0F, "%.3f",
+									ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+								if (showAsAuthored) {
+									ImGui::PopStyleColor(1);
+								}
+								if (ImGui::IsItemDeactivatedAfterEdit()) {
+									cache->SetOverride(sceneId, draft);
+									dmeta.hadKey = true;
+									dmeta.effective = draft;
+								}
+
+								ImGui::SameLine();
+								if (ImGui::Button("Reset##unidxOvReset")) {
+									cache->SetOverride(sceneId, authored);
+									draft = authored;
+									dmeta.hadKey = true;
+									dmeta.effective = authored;
+								}
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("No scene metadata found");
+								ImGui::PopID();
+							}
+							ImGui::EndTable();
+						}
+						ImGui::TreePop();
+					}
+				}
 			}
 			ImGui::EndChild();
 
 			ImGui::Spacing();
-			if (ImGui::Button("Save Overrides to JSON")) {
-				cache->SaveUserOverrides();
+			const auto persistStatus = cache->GetPersistStatus();
+			if (persistStatus == SceneCache::PersistStatus::Saved) {
+				ImGui::TextUnformatted("Autosave: Saved");
+			} else if (persistStatus == SceneCache::PersistStatus::Dirty) {
+				ImGui::TextUnformatted("Autosave: Unsaved changes");
+			} else {
+				ImGui::TextUnformatted("Autosave: Save failed (will retry)");
 			}
-			ImGui::SetItemTooltip("Write exemptions and overrides to OStimSizeDifferenceManager_Overrides.json.");
+			ImGui::SetItemTooltip("Changes autosave while this page is open and flush when you leave it.");
 
 			Config::Set(g_configDraft);
 		}

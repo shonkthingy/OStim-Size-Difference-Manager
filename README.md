@@ -73,6 +73,7 @@ The SKSE Menu Framework includes a dedicated tab to visually browse all installe
 These settings are stored in `Data/SKSE/Plugins/OStimSizeDifferenceManager_Overrides.json`.
 
 The JSON contains:
+
 - `exemptions`: scene IDs that are always allowed.
 - `exemptPacks`: pack names marked by the **Exempt Pack** checkbox in the UI.
 - `overrides`: scene ID -> authored scale-difference override value.
@@ -100,16 +101,6 @@ Currently, the mod calculates size differences as an absolute value (e.g. `Actor
 ### OStim "Disable Scaling" recommendation
 
 As noted in the installation steps, it is **highly recommended** to enable **"Disable Scaling"** in OStim's Alignment MCM. Native OStim scaling left on can combine with this mod's filtering in ways that produce inconsistent alignments.
-
----
-
-## ToDo
-
-A full list of follow-up work, edge cases, and future ideas is in `TODO.md`. **1.0** delivers the 4-state Filtering Mode (including **Soft** closest-match), the SKSE menu UX overhaul, and live hook behaviour. Still on the radar, for example:
-
-- Ratio-based matching (vs absolute difference) and Dom/Sub role awareness.
-- Smoother behaviour when OStim's native scaling is left enabled (vs. the recommended **Disable Scaling** setting).
-- Hub/transition fixes, 3+ actor support, and maintenance items as listed in `TODO.md`.
 
 ---
 
@@ -163,6 +154,25 @@ Hook addresses are resolved in this order:
 Currently tested and supported: **7.4.0.0**, **7.4.0.3**
 
 To add support for a new OStim version, its version string must be whitelisted in `skse/src/AddressResolution/VersionGate.cpp` and its byte patterns added to `signatures.json`.
+
+---
+
+## Changelog
+
+### v1.0.1
+
+- Exemptions & Overrides UI now uses snapshot-based caching to remove major per-frame overhead.
+- Added lifecycle autosave persistence with atomic JSON writes for exemptions/overrides changes.
+
+---
+
+## ToDo
+
+A full list of follow-up work, edge cases, and future ideas is in `TODO.md`.
+
+- Ratio-based matching (vs absolute difference) and Dom/Sub role awareness.
+- Smoother behaviour when OStim's native scaling is left enabled (vs. the recommended **Disable Scaling** setting).
+- Hub/transition fixes, 3+ actor support, and maintenance items as listed in `TODO.md`.
 
 ---
 

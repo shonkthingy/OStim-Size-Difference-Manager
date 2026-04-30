@@ -247,7 +247,7 @@ namespace SizeDiff::UI
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(110.0F);
 					ImGui::InputFloat("##packOv", &packOvDraft, 0.0F, 0.0F, "%.3f",
-						ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+						ImGuiInputTextFlags_AutoSelectAll);
 					ImGui::SameLine();
 					if (ImGui::Button("Apply##packOvApply")) {
 						for (const auto& sceneId : sceneIds) {

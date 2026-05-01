@@ -53,6 +53,8 @@ Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceMa
 
 Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`. With the menu installed, these options apply on the fly together with the hooks below (no restart required for **Mode** / tolerance / scope toggles in normal use).
 
+While **General Settings** is open in the menu, changes to these options **autosave** to `OStimSizeDifferenceManager.ini` after a short debounce, and any pending edits **flush** when you leave that page (for example by switching to **Exemptions & Overrides**). The next time you open **General Settings**, the plugin **reloads** the INI from disk, so edits you made with an external editor while the game is running are picked up when you return to that tab.
+
 
 | Option                  | Default      | Description                                                                                 |
 | ----------------------- | ------------ | ------------------------------------------------------------------------------------------- |

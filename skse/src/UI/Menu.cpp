@@ -73,8 +73,26 @@ namespace SizeDiff::UI
 			wasVisible = pageVisible;
 		}
 
+		void UpdateSettingsPageLifecycle(bool pageVisible)
+		{
+			using clock = std::chrono::steady_clock;
+			static bool wasVisible = false;
+			const auto now = clock::now();
+
+			if (pageVisible) {
+				if (!wasVisible) {
+					Config::Reload();
+				}
+				Config::TryAutosave(now, std::chrono::milliseconds(1500));
+			} else if (wasVisible) {
+				Config::FlushDirtyNow();
+			}
+			wasVisible = pageVisible;
+		}
+
 		void __stdcall RenderSettings()
 		{
+			UpdateSettingsPageLifecycle(true);
 			g_configDraft = Config::Get();
 			auto& ui = g_configDraft;
 			UpdateExemptionsPageLifecycle(false, SceneCache::Get());
@@ -126,20 +144,17 @@ namespace SizeDiff::UI
 				ImGui::Dummy(ImVec2(0.0F, 6.0F));
 			}
 
-			if (ImGui::CollapsingHeader("Persistence", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::Spacing();
-				if (ImGui::Button("Reload from disk")) {
-					Config::Reload();
-					ui = Config::Get();
-				}
-				ImGui::SetItemTooltip("Reload all settings from OStimSizeDifferenceManager.ini without saving the UI state.");
-				ImGui::SameLine();
-				if (ImGui::Button("Save Settings")) {
-					Config::Save();
-				}
-				ImGui::SetItemTooltip("Write current settings to OStimSizeDifferenceManager.ini.");
-				ImGui::Dummy(ImVec2(0.0F, 4.0F));
+			ImGui::Spacing();
+			const auto iniPersist = Config::GetPersistStatus();
+			if (iniPersist == Config::PersistStatus::Saved) {
+				ImGui::TextUnformatted("INI autosave: Saved");
+			} else if (iniPersist == Config::PersistStatus::Dirty) {
+				ImGui::TextUnformatted("INI autosave: Unsaved changes");
+			} else {
+				ImGui::TextUnformatted("INI autosave: Save failed (will retry)");
 			}
+			ImGui::SetItemTooltip("Settings autosave while this page is open and flush when you leave it. "
+				"Reopening General Settings reloads from disk so external INI edits apply.");
 
 			Config::Set(g_configDraft);
 		}
@@ -152,6 +167,7 @@ namespace SizeDiff::UI
 
 		void __stdcall RenderExemptions()
 		{
+			UpdateSettingsPageLifecycle(false);
 			g_configDraft = Config::Get();
 
 			static char packSearchBuffer[256]{};

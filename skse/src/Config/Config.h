@@ -1,6 +1,7 @@
 #pragma once
 
-#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <string>
 
 namespace SizeDiff::Config
@@ -24,9 +25,19 @@ namespace SizeDiff::Config
 
 	void Load();
 	void Reload();
-	void Save();
 	void Set(Settings settings);
 	Settings Get();
 	Mode GetMode();
 	float GetTolerance();
+
+	enum class PersistStatus : std::uint8_t
+	{
+		Saved = 0,
+		Dirty = 1,
+		SaveFailed = 2
+	};
+
+	bool TryAutosave(std::chrono::steady_clock::time_point now, std::chrono::milliseconds debounce);
+	bool FlushDirtyNow();
+	PersistStatus GetPersistStatus();
 }

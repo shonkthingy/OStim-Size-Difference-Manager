@@ -51,7 +51,7 @@ Logs are written to: `My Games/Skyrim Special Edition/SKSE/OStimSizeDifferenceMa
 | **Debug**  | `3`        | Log filtering logic but allow any scene.                         |
 
 
-Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`. With the menu installed, these options apply on the fly together with the hooks below (no restart required for **Mode** / tolerance / scope toggles in normal use).
+Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or by manually editing `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini`. With the menu installed, **General** options apply on the fly together with the hooks below (no restart required for **Mode** / tolerance / scope toggles in normal use). The INI is **created automatically** if it is missing on first load, and changes made from the menu are **written to the INI immediately** (no separate save/reload controls).
 
 
 | Option                  | Default      | Description                                                                                 |
@@ -171,6 +171,13 @@ To add support for a new OStim **FileVersion**, extend `kKnownVersions`, update 
 ---
 
 ## Changelog
+
+### v1.0.3
+
+- **INI:** Auto-create `OStimSizeDifferenceManager.ini` when missing; ensure plugin directories exist before writes; **autosave** general settings from the menu on every change (removed manual save/reload UI).
+- **Logging:** Structured runtime log levels (`trace`–`critical`), `LogLevel` INI key, and in-game log level control; documented event-style log lines.
+- **OStim builds:** Multi-version hook resolution and dev tooling; release MSVC ABI alignment for hooks that pass STL types from `OStim.dll`.
+- **Filtering:** Fix player vs NPC scope toggles when OStim uses **thread id 0** for the player scene (player scenes are detected by thread id **equality**, not “non-zero id” heuristics).
 
 ### v1.0.2
 

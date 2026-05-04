@@ -40,7 +40,7 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 | `skse/src/SceneCache/SceneLoader.cpp`           | Background thread: load overrides JSON, scan OStim scene JSON under `Data/`, populate `SceneCache::Cache`.                                                         |
 | `skse/src/SceneCache/SceneCache.cpp`            | Thread-safe cache: match scenes to actor scales, exemptions, pack exemptions, overrides, autosave.                                                                 |
 | `skse/src/Matching/HeightMatcher.cpp`           | `ComputeDiff` / `MatchesStrict` (max − min spread vs scene diff).                                                                                                  |
-| `skse/src/Config/Config.cpp`                    | INI load/save for mode, tolerance, scope flags.                                                                                                                    |
+| `skse/src/Config/Config.cpp`                    | INI load/save for mode, tolerance, scope flags, `LogLevel`; creates INI if missing; UI-driven changes persist immediately.                                         |
 | `skse/src/UI/Menu.cpp`                          | SKSE Menu Framework registration and ImGui pages.                                                                                                                  |
 | `skse/src/AddressResolution/VersionGate.cpp`    | Reads `OStim.dll` PE version string; whitelist for hook installation.                                                                                              |
 | `skse/src/AddressResolution/PdbResolver.cpp`    | Optional symbol → address resolution when debug symbols are available.                                                                                             |
@@ -65,7 +65,7 @@ This plugin loads `SKSEMenuFramework.dll` exports at runtime. The repo vendors a
 | Area                    | Path                                                  | Notes                                                  |
 | ----------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
 | Plugin sources          | `skse/src/`                                           | C++23; PCH `skse/src/PCH.h`.                           |
-| Config                  | `skse/src/Config/`                                    | INI settings and autosave helpers.                     |
+| Config                  | `skse/src/Config/`                                    | INI settings; immediate autosave on UI changes.         |
 | Scene index + overrides | `skse/src/SceneCache/`                                | Scan + `Cache` + JSON persistence.                     |
 | Hooks                   | `skse/src/Hooks/`                                     | MinHook trampolines and filter glue.                   |
 | UI                      | `skse/src/UI/`                                        | `Menu.cpp` / `Menu.h`, vendored `SKSEMenuFramework.h`. |
@@ -138,7 +138,7 @@ All graph hooks use **MinHook** (vcpkg package `minhook`; `MH_CreateHook` / `MH_
 
 - `Filter::ResolveGraphHookThreadId` prefers `State::GetLastActiveThreadId()`, then OStim NG API `GetPlayerThreadID()`, then listener-tracked player thread id.
 - `Filter::ResolveMenuHookThreadId` prefers API `GetPlayerThreadID()`, then listener id.
-- `Filter::ShouldBypassFiltering` applies INI scope toggles using `CanonicalPlayerOStimThreadId()` so “player scene” detection stays consistent with the NG API.
+- `Filter::ShouldBypassFiltering` applies INI scope toggles using `CanonicalPlayerOStimThreadId()` so “player scene” detection stays consistent with the NG API. **Player scene** means `threadId == playerThread` (including OStim thread id **0** when that is the player thread); do not require non-zero ids.
 
 **Grep-friendly log strings**
 
@@ -165,8 +165,8 @@ All graph hooks use **MinHook** (vcpkg package `minhook`; `MH_CreateHook` / `MH_
 ## Configuration
 
 - **INI** path (runtime, relative to game root): `Data/SKSE/Plugins/OStimSizeDifferenceManager.ini` (`skse/src/Config/Config.cpp`).
-- Keys: `Mode` (0–3), `Tolerance`, `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`.
-- `Config::Get()` is read from hooks and UI hot paths; `Set` / `Save` used from menu.
+- Keys: `Mode` (0–3), `Tolerance`, `ApplyToPlayerScenes`, `ApplyToNpcScenes`, `ApplyInAutoMode`, `LogLevel`.
+- `Config::Get()` is read from hooks and UI hot paths. `Load` writes a new INI when the file is missing. `SetFromSource(..., UI)` applies live settings from the menu and calls `Save` when values actually change. `Reload` / `Save` remain available for non-UI callers.
 
 ## UI (SKSE Menu Framework)
 

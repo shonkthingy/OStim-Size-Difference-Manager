@@ -75,7 +75,7 @@ This plugin loads `SKSEMenuFramework.dll` exports at runtime. The repo vendors a
 | Address resolution      | `skse/src/AddressResolution/`                         | Version gate, PDB, patterns.                           |
 | State                   | `skse/src/Util/`                                      | `State.cpp`, `Logger.h`.                               |
 | Ship patterns           | `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`                   | Version-keyed byte patterns for pattern fallback.      |
-| Build                   | `skse/CMakeLists.txt`, `skse/vcpkg.json`, `build.ps1` | Post-build copies DLL to `data/SKSE/Plugins/`.         |
+| Build                   | `skse/CMakeLists.txt`, `skse/vcpkg.json`, `build.ps1` | Release build is the default; post-build copies DLL to `data/SKSE/Plugins/`. |
 
 
 ## Runtime lifecycle
@@ -191,14 +191,17 @@ Each supported PE version should have patterns for all three hooked symbols in `
 
 Headers under `skse/src/OStimTypes/` provide layouts and method names used across hooks (`Graph::Node`, `Graph::Navigation`, `Trait::ActorCondition`, furniture types, etc.). If OStim’s C++ ABI changes, update these **together** with patterns / PDB strings and validate in game.
 
+The hook targets pass MSVC STL types (`std::vector<Trait::ActorCondition>`, `std::function<bool(Graph::Node*)>`) by value, so the plugin must be built with the same release STL ABI as OStim. Use `build-release-msvc` for in-game testing and packaged builds. A debug build changes MSVC iterator/debug layout and can corrupt hook arguments, which was observed as empty actor-condition vectors, failed starting-scene selection, or missing menu options.
+
 ## Pitfalls and operational notes
 
 1. **Build environment**: MSVC standard library headers require a Visual Studio developer environment or `vcvars64` in the shell session before CMake build (details in `.cursor/rules/build-and-toolchain.mdc`).
-2. **Unknown OStim version**: Hooks silently skip installation; logs show `Unknown OStim.dll version` and per-hook `Could not resolve` warnings.
-3. **Verbose logging**: `ThreadContextHook.cpp` logs each actor’s scale breakdown at **info** level when threads start or nodes change — noisy during active scenes.
-4. `**kPluginVersion` drift**: `skse/src/Plugin.h` string is passed into `OstimNG_API::Thread::GetAPI`; keep it meaningful relative to releases and README.
-5. **No `OStim.dll` at load**: Early return in `Main.cpp` — no hooks, no interface exchange; plugin stays inert.
-6. **Soft mode menu behaviour**: `MenuFilterHook.cpp` intentionally **shows** mismatched navigation entries in Soft mode so manual navigation stays available; random-node hooks still do closest-match logic.
+2. **Release ABI required**: Hooked OStim functions cross DLL boundaries with STL types by value. Debug builds are useful for compile checks only; validate behavior with `build-release-msvc` / `./build.ps1`.
+3. **Unknown OStim version**: Hooks silently skip installation; logs show `Unknown OStim.dll version` and per-hook `Could not resolve` warnings.
+4. **Verbose logging**: `ThreadContextHook.cpp` logs each actor’s scale breakdown at **info** level when threads start or nodes change — noisy during active scenes.
+5. **`kPluginVersion` drift**: `skse/src/Plugin.h` string is passed into `OstimNG_API::Thread::GetAPI`; keep it meaningful relative to releases and README.
+6. **No `OStim.dll` at load**: Early return in `Main.cpp` — no hooks, no interface exchange; plugin stays inert.
+7. **Soft mode menu behaviour**: `MenuFilterHook.cpp` intentionally **shows** mismatched navigation entries in Soft mode so manual navigation stays available; random-node hooks still do closest-match logic.
 
 ## Change checklists
 

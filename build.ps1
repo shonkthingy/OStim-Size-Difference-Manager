@@ -1,5 +1,5 @@
 param(
-    [string]$Preset = "build-debug-msvc"
+    [string]$Preset = "build-release-msvc"
 )
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"

@@ -44,7 +44,7 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 | `skse/src/UI/Menu.cpp`                          | SKSE Menu Framework registration and ImGui pages.                                                                                                                  |
 | `skse/src/AddressResolution/VersionGate.cpp`    | Reads `OStim.dll` PE version string; whitelist for hook installation.                                                                                              |
 | `skse/src/AddressResolution/PdbResolver.cpp`    | Optional symbol → address resolution when debug symbols are available.                                                                                             |
-| `skse/src/AddressResolution/PatternScanner.cpp` | Scans `OStim.dll` code sections for byte patterns from `data/SKSE/Plugins/signatures.json`.                                                                        |
+| `skse/src/AddressResolution/PatternScanner.cpp` | Scans `OStim.dll` code sections for byte patterns from `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`.                                                                        |
 | `skse/src/OStimAPI/OStimInterface.h`            | Minimal vtable copy of OStim’s public `InterfaceExchange` / `ThreadInterface` ABI.                                                                                 |
 | `skse/src/OStimAPI/OstimNGThreadAPI.h`          | Trimmed client declarations for `RequestPluginAPI_Thread` (thread id, auto mode, etc.).                                                                            |
 | `skse/src/Util/State.cpp`                       | Per–OStim-thread actor scales, last active thread id, player thread id.                                                                                            |
@@ -74,7 +74,7 @@ This plugin loads `SKSEMenuFramework.dll` exports at runtime. The repo vendors a
 | Matching                | `skse/src/Matching/`                                  | Pure height-diff math.                                 |
 | Address resolution      | `skse/src/AddressResolution/`                         | Version gate, PDB, patterns.                           |
 | State                   | `skse/src/Util/`                                      | `State.cpp`, `Logger.h`.                               |
-| Ship patterns           | `data/SKSE/Plugins/signatures.json`                   | Version-keyed byte patterns for pattern fallback.      |
+| Ship patterns           | `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`                   | Version-keyed byte patterns for pattern fallback.      |
 | Build                   | `skse/CMakeLists.txt`, `skse/vcpkg.json`, `build.ps1` | Post-build copies DLL to `data/SKSE/Plugins/`.         |
 
 
@@ -119,7 +119,7 @@ All graph hooks use **MinHook** (vcpkg package `minhook`; `MH_CreateHook` / `MH_
 
 1. Reads `OStim.dll` PE version via `AddressResolution::GetOStimVersionString`.
 2. Aborts if `AddressResolution::IsKnownGoodVersion` fails (unknown version → **no hooks** for graph functions; plugin still loads).
-3. Resolves target address: **PDB symbol first** (`ResolveByPdbSymbol`), then **pattern** from `data/SKSE/Plugins/signatures.json` (`ResolveByPattern`).
+3. Resolves target address: **PDB symbol first** (`ResolveByPdbSymbol`), then **pattern** from `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json` (`ResolveByPattern`).
 
 
 | Hook source                            | Hooked API (conceptual)             | Role                                                                                                                                                                          |
@@ -182,10 +182,10 @@ All graph hooks use **MinHook** (vcpkg package `minhook`; `MH_CreateHook` / `MH_
 | PE version string | `skse/src/AddressResolution/VersionGate.cpp` (`GetOStimVersionString`, `IsKnownGoodVersion`) |
 | Whitelist         | Same file — extend when officially supporting a new `OStim.dll` build                        |
 | PDB lookup        | `skse/src/AddressResolution/PdbResolver.cpp`                                                 |
-| Pattern fallback  | `skse/src/AddressResolution/PatternScanner.cpp` + `data/SKSE/Plugins/signatures.json`        |
+| Pattern fallback  | `skse/src/AddressResolution/PatternScanner.cpp` + `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`        |
 
 
-Each supported PE version should have patterns for all three hooked symbols in `signatures.json`. Mangled names embedded in hook `.cpp` files must match the MSVC ABI of the target OStim build when using PDB resolution.
+Each supported PE version should have patterns for all three hooked symbols in `OStimSizeDifferenceManager-Signatures.json`. Mangled names embedded in hook `.cpp` files must match the MSVC ABI of the target OStim build when using PDB resolution.
 
 ## OStimTypes and ABI
 
@@ -209,14 +209,14 @@ Headers under `skse/src/OStimTypes/` provide layouts and method names used acros
 
 **If you change hooked OStim APIs or structs**
 
-- Update `skse/src/OStimTypes/`, mangled names in hook installers, and `data/SKSE/Plugins/signatures.json`.
+- Update `skse/src/OStimTypes/`, mangled names in hook installers, and `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`.
 - Re-run in-game tests on each whitelisted `OStim.dll` PE version.
 
 **If you add support for a new OStim build**
 
 1. Record the new `OStim.dll` **file version** (four-component string).
 2. Add it to `kKnownVersions` in `skse/src/AddressResolution/VersionGate.cpp`.
-3. Add three `signatures.json` entries (one per symbol) or verify PDB symbols still resolve.
+3. Add three signature entries to `OStimSizeDifferenceManager-Signatures.json` (one per symbol) or verify PDB symbols still resolve.
 4. Smoke-test: thread start, random scene pick, auto progression, navigation menu, INI scope flags.
 
 **If you change menu or overrides persistence**

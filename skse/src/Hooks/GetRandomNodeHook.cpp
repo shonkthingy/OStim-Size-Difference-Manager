@@ -72,9 +72,12 @@ bool SizeDiff::Hooks::InstallGetRandomNodeHook()
 	constexpr auto kSymbol = "?getRandomNode@GraphTable@Graph@@SAPEAUNode@2@PEAVFurnitureType@Furniture@2@V?$vector@UActorCondition@Trait@@V?$allocator@UActorCondition@Trait@@@std@@@std@@V?$function@$$A6A_NPEAUNode@Graph@@@Z@std@@@Z";
 	auto target = SizeDiff::AddressResolution::ResolveByPdbSymbol(kSymbol);
 	if (!target) {
+		const char* const pat = SizeDiff::AddressResolution::UsesLegacyGraphBytePatterns(*version)
+			? "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?"
+			: "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1";
 		target = SizeDiff::AddressResolution::ResolveByPattern({
 			.version = *version,
-			.pattern = "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1"
+			.pattern = pat,
 		});
 	}
 	if (!target) {

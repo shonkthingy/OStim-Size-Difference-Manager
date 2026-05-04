@@ -6,8 +6,19 @@
 namespace
 {
 	const std::array kKnownVersions{
+		"7.3.4.2",
+		"7.3.4.3",
+		"7.3.4.4",
+		"7.3.4.5",
+		"7.3.5.0",
+		"7.3.5.1",
+		"7.3.5.2",
+		"7.3.5.3",
+		"7.3.5.4",
 		"7.4.0.0",
-		"7.4.0.3"
+		"7.4.0.1",
+		"7.4.0.2",
+		"7.4.0.3",
 	};
 }
 
@@ -56,4 +67,10 @@ bool SizeDiff::AddressResolution::IsKnownGoodVersion(const std::string& version)
 	}
 	spdlog::warn("Unknown OStim.dll version '{}'; plugin will run in no-hook mode", version);
 	return false;
+}
+
+bool SizeDiff::AddressResolution::UsesLegacyGraphBytePatterns(const std::string& version)
+{
+	// Dotted numeric quads sort lexicographically for OStim NG file versions encountered so far.
+	return version < "7.3.5.3";
 }

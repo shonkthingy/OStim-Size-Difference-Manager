@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 2,
+  "signatures": [
+    {
+      "ostimVersion": "7.3.4.2",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.3",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.4",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.5",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.0",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.1",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.2",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.3",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.4",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.0",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.1",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.2",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.3",
+      "symbol": "Graph::GraphTable::getRandomNode",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 78 49 8B F0 4C 8B FA 4C 8B E1",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.2",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.3",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.4",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.5",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.0",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.1",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.2",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4",
+      "patternGroup": "legacyGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.3",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.3.5.4",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.0",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.1",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.2",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.4.0.3",
+      "symbol": "Graph::Node::getRandomNodeInRange",
+      "pattern": "40 55 53 56 57 41 56 41 57 48 8D 6C 24 D1 48 81 EC D8 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 17 49 8B F9 4D 8B F0 8B F2 48 8B D9",
+      "patternGroup": "modernGraph"
+    },
+    {
+      "ostimVersion": "7.3.4.2",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.4.3",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.4.4",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.4.5",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.5.0",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.5.1",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.5.2",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.5.3",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.3.5.4",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.4.0.0",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.4.0.1",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.4.0.2",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    },
+    {
+      "ostimVersion": "7.4.0.3",
+      "symbol": "Graph::Navigation::fulfilledBy",
+      "pattern": "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD",
+      "patternGroup": "shared"
+    }
+  ],
+  "notes": "Patterns mirror skse/src/Hooks/* installers (PDB first, then scan). legacyGraph applies when PE FileVersion < 7.3.5.3 (UsesLegacyGraphBytePatterns). The plugin does not load this file at runtime; keep it in sync when adding OStim builds."
+}

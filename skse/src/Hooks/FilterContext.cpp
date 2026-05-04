@@ -4,7 +4,6 @@
 
 #include "OStimAPI/OstimNGThreadAPI.h"
 #include "Plugin.h"
-#include "Util/Log.h"
 #include "Util/State.h"
 
 namespace
@@ -64,13 +63,14 @@ bool SizeDiff::Filter::ShouldBypassFiltering(uint32_t threadId, const Config::Se
 	// (listeners not fired yet) while Resolve*ThreadId() already returns GetPlayerThreadID() from
 	// the OStim API — then "Filter Player Scenes" / "Filter NPC Scenes" never match reality.
 	const uint32_t playerThread = CanonicalPlayerOStimThreadId();
-	const bool isPlayerScene = (threadId != 0 && playerThread != 0 && threadId == playerThread);
+	// OStim may use thread id 0; treat player scenes by id equality (threadId == playerThread).
+	const bool isPlayerScene = (threadId == playerThread);
 
 	if (!settings.applyToPlayerScenes && isPlayerScene) {
 		spdlog::trace("filter bypassed: player scene filtering disabled (thread={})", threadId);
 		return true;
 	}
-	// "NPC" here means not the player-involved OStim thread, including threadId 0 (unknown / between scenes).
+	// "NPC" here means any OStim thread that is not the player's current thread (by id equality).
 	if (!settings.applyToNpcScenes && !isPlayerScene) {
 		spdlog::trace("filter bypassed: npc scene filtering disabled (thread={})", threadId);
 		return true;

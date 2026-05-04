@@ -166,21 +166,6 @@ namespace SizeDiff::UI
 				ImGui::Dummy(ImVec2(0.0F, 6.0F));
 			}
 
-			if (ImGui::CollapsingHeader("Persistence", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::Spacing();
-				if (ImGui::Button("Reload from disk")) {
-					Config::Reload();
-					ui = Config::Get();
-				}
-				ImGui::SetItemTooltip("Reload all settings from OStimSizeDifferenceManager.ini without saving the UI state.");
-				ImGui::SameLine();
-				if (ImGui::Button("Save Settings")) {
-					Config::Save(Log::ConfigSource::UI);
-				}
-				ImGui::SetItemTooltip("Write current settings to OStimSizeDifferenceManager.ini.");
-				ImGui::Dummy(ImVec2(0.0F, 4.0F));
-			}
-
 			if (startingSettings.mode != ui.mode ||
 				std::fabs(startingSettings.tolerance - ui.tolerance) > 1e-6F ||
 				startingSettings.applyToPlayerScenes != ui.applyToPlayerScenes ||

@@ -18,6 +18,7 @@ namespace
 	std::mutex g_mutex;
 	SizeDiff::Config::Settings g_settings{};
 	inline constexpr auto kIniPath = L"Data/SKSE/Plugins/OStimSizeDifferenceManager.ini";
+	inline constexpr auto kIniPathLog = "Data/SKSE/Plugins/OStimSizeDifferenceManager.ini";
 
 	bool ParseBool(const std::string& value)
 	{
@@ -160,8 +161,9 @@ void SizeDiff::Config::Load(const Log::ConfigSource source)
 		spdlog::warn(
 			"[CONFIG_LOAD_SOURCE] source={} path={} status=missing_or_unreadable using_defaults=true",
 			Log::ToString(source),
-			"Data/SKSE/Plugins/OStimSizeDifferenceManager.ini");
+			kIniPathLog);
 		ApplySettings(loaded, source);
+		Save(source);
 		return;
 	}
 
@@ -250,12 +252,27 @@ void SizeDiff::Config::Save(const Log::ConfigSource source)
 		snapshot = g_settings;
 	}
 
-	std::ofstream out(kIniPath);
+	const std::filesystem::path iniPath(kIniPath);
+	const auto parentPath = iniPath.parent_path();
+	if (!parentPath.empty()) {
+		std::error_code ec{};
+		std::filesystem::create_directories(parentPath, ec);
+		if (ec) {
+			spdlog::error(
+				"[CONFIG_PERSIST_RESULT] source={} path={} result=failed error=create_directories_failed details={}",
+				Log::ToString(source),
+				kIniPathLog,
+				ec.message());
+			return;
+		}
+	}
+
+	std::ofstream out(iniPath);
 	if (!out.good()) {
 		spdlog::error(
 			"[CONFIG_PERSIST_RESULT] source={} path={} result=failed error=could_not_open",
 			Log::ToString(source),
-			"Data/SKSE/Plugins/OStimSizeDifferenceManager.ini");
+			kIniPathLog);
 		return;
 	}
 	out << "[General]\n";
@@ -268,7 +285,7 @@ void SizeDiff::Config::Save(const Log::ConfigSource source)
 	spdlog::info(
 		"[CONFIG_PERSIST_RESULT] source={} path={} result=success",
 		Log::ToString(source),
-		"Data/SKSE/Plugins/OStimSizeDifferenceManager.ini");
+		kIniPathLog);
 }
 
 void SizeDiff::Config::Set(Settings settings)
@@ -278,7 +295,15 @@ void SizeDiff::Config::Set(Settings settings)
 
 void SizeDiff::Config::SetFromSource(Settings settings, const Log::ConfigSource source)
 {
+	bool changed = false;
+	{
+		std::scoped_lock lock(g_mutex);
+		changed = !SettingsEqual(g_settings, settings);
+	}
 	ApplySettings(settings, source);
+	if (changed && source == Log::ConfigSource::UI) {
+		Save(source);
+	}
 }
 
 void SizeDiff::Config::Reload()

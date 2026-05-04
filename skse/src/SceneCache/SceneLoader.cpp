@@ -1,6 +1,7 @@
 #include "SceneCache/SceneLoader.h"
 
 #include "SceneCache/SceneCache.h"
+#include "Util/Log.h"
 
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
@@ -17,16 +18,28 @@ using json = nlohmann::json;
 
 namespace
 {
+	struct ScanResult
+	{
+		std::unordered_map<std::string, SizeDiff::SceneCache::SceneScaleInfo> entries;
+		std::size_t jsonFileCount{ 0 };
+		std::size_t indexedSceneCount{ 0 };
+		std::size_t malformedJsonCount{ 0 };
+		std::size_t unreadableFileCount{ 0 };
+		std::size_t missingActorsArrayCount{ 0 };
+		std::size_t missingActorScaleCount{ 0 };
+	};
+
 	std::string ToLower(std::string value)
 	{
 		std::ranges::transform(value, value.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 		return value;
 	}
 
-	std::unordered_map<std::string, SizeDiff::SceneCache::SceneScaleInfo> LoadSceneMetadata()
+	ScanResult LoadSceneMetadata()
 	{
-		std::unordered_map<std::string, SizeDiff::SceneCache::SceneScaleInfo> result;
+		ScanResult result;
 		const std::filesystem::path root{ "Data/SKSE/Plugins/OStim/scenes" };
+		constexpr std::size_t kDetailedWarnCap = 8;
 
 		if (!std::filesystem::exists(root)) {
 			spdlog::warn("Scene path missing: {}", root.string());
@@ -37,15 +50,23 @@ namespace
 			if (!entry.is_regular_file() || entry.path().extension() != ".json") {
 				continue;
 			}
+			++result.jsonFileCount;
 
 			std::ifstream in(entry.path());
 			if (!in.good()) {
+				++result.unreadableFileCount;
+				if (result.unreadableFileCount <= kDetailedWarnCap) {
+					spdlog::warn("Skipping unreadable scene json: {}", entry.path().string());
+				}
 				continue;
 			}
 
 			json doc = json::parse(in, nullptr, false);
 			if (doc.is_discarded()) {
-				spdlog::warn("Skipping malformed scene json: {}", entry.path().string());
+				++result.malformedJsonCount;
+				if (result.malformedJsonCount <= kDetailedWarnCap) {
+					spdlog::warn("Skipping malformed scene json: {}", entry.path().string());
+				}
 				continue;
 			}
 
@@ -55,6 +76,10 @@ namespace
 			}
 
 			if (!doc.contains("actors") || !doc["actors"].is_array()) {
+				++result.missingActorsArrayCount;
+				if (result.missingActorsArrayCount <= kDetailedWarnCap) {
+					spdlog::debug("Skipping scene json with no actors array: {}", entry.path().string());
+				}
 				continue;
 			}
 
@@ -86,7 +111,7 @@ namespace
 					packName = components.front().string();
 				}
 
-				result[sceneId] = SizeDiff::SceneCache::SceneScaleInfo{
+				result.entries[sceneId] = SizeDiff::SceneCache::SceneScaleInfo{
 					.minScale = minScale,
 					.maxScale = maxScale,
 					.diff = maxScale - minScale,
@@ -94,6 +119,10 @@ namespace
 					.hasMissingActorScale = hasMissingActorScale,
 					.packName = std::move(packName)
 				};
+				++result.indexedSceneCount;
+				if (hasMissingActorScale) {
+					++result.missingActorScaleCount;
+				}
 			}
 		}
 
@@ -104,10 +133,24 @@ namespace
 void SizeDiff::SceneCache::StartBackgroundScan()
 {
 	std::thread([] {
-		SizeDiff::SceneCache::Get()->LoadUserOverrides();
-		auto data = LoadSceneMetadata();
-		const auto total = data.size();
-		SizeDiff::SceneCache::Get()->SetData(std::move(data));
-		spdlog::info("Scene metadata scan complete: {} scenes indexed", total);
+		try {
+			SizeDiff::SceneCache::Get()->LoadUserOverrides();
+			auto scan = LoadSceneMetadata();
+			SizeDiff::SceneCache::Get()->SetData(std::move(scan.entries));
+			spdlog::info(
+				"[SCENE_SCAN_SUMMARY] indexed={} jsonFiles={} malformed={} unreadable={} missingActorsArray={} missingActorScale={} malformedSuppressed={} unreadableSuppressed={}",
+				scan.indexedSceneCount,
+				scan.jsonFileCount,
+				scan.malformedJsonCount,
+				scan.unreadableFileCount,
+				scan.missingActorsArrayCount,
+				scan.missingActorScaleCount,
+				scan.malformedJsonCount > 8 ? (scan.malformedJsonCount - 8) : 0,
+				scan.unreadableFileCount > 8 ? (scan.unreadableFileCount - 8) : 0);
+		} catch (const std::exception& e) {
+			spdlog::error("[SCENE_SCAN_FAIL] error={}", e.what());
+		} catch (...) {
+			spdlog::error("[SCENE_SCAN_FAIL] error=unknown_exception");
+		}
 	}).detach();
 }

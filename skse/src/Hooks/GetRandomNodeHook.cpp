@@ -45,6 +45,7 @@ namespace
 
 		const auto scales = SizeDiff::State::GetScales(contextThread);
 		if (scales.empty()) {
+			spdlog::trace("getRandomNode: no scales for thread {}; bypassing size filter", contextThread);
 			return g_originalGetRandomNode(furnitureType, std::move(actorConditions), std::move(nodeCondition));
 		}
 
@@ -65,12 +66,17 @@ namespace
 bool SizeDiff::Hooks::InstallGetRandomNodeHook()
 {
 	const auto version = SizeDiff::AddressResolution::GetOStimVersionString();
-	if (!version || !SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
+	if (!version) {
+		spdlog::warn("[HOOK_RESOLVE_FAIL] hook=getRandomNode reason=missing_ostim_version");
+		return false;
+	}
+	if (!SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
 		return false;
 	}
 
 	constexpr auto kSymbol = "?getRandomNode@GraphTable@Graph@@SAPEAUNode@2@PEAVFurnitureType@Furniture@2@V?$vector@UActorCondition@Trait@@V?$allocator@UActorCondition@Trait@@@std@@@std@@V?$function@$$A6A_NPEAUNode@Graph@@@Z@std@@@Z";
 	auto target = SizeDiff::AddressResolution::ResolveByPdbSymbol(kSymbol);
+	const char* strategy = "pdb_mangled";
 	if (!target) {
 		const char* const pat = SizeDiff::AddressResolution::UsesLegacyGraphBytePatterns(*version)
 			? "4C 89 44 24 18 48 89 54 24 10 53 55 56 57 41 54 41 56 41 57 48 83 EC 50 49 8B E8 4C 8B FA 4C 8B E1 E8 ? ? ? ?"
@@ -79,11 +85,13 @@ bool SizeDiff::Hooks::InstallGetRandomNodeHook()
 			.version = *version,
 			.pattern = pat,
 		});
+		strategy = "pattern";
 	}
 	if (!target) {
 		spdlog::warn("Could not resolve Graph::GraphTable::getRandomNode; running without hook");
 		return false;
 	}
+	spdlog::debug("[HOOK_RESOLVE] hook=getRandomNode strategy={} address=0x{:X}", strategy, *target);
 
 	const auto targetAddr = reinterpret_cast<void*>(*target);
 	if (MH_CreateHook(targetAddr, reinterpret_cast<void*>(&HookedGetRandomNode), reinterpret_cast<void**>(&g_originalGetRandomNode)) != MH_OK) {

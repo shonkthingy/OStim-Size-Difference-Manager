@@ -47,18 +47,19 @@ namespace SizeDiff::Hooks::RandomNodeTwoPass
 
 			Graph::Node* strictResult = callOriginal(std::move(ac1), std::move(strictPred));
 			if (strictResult) {
-				spdlog::info("{}: Strict Match -> {}", logTag, strictResult->getNodeID());
+				const char* const strictNodeId = strictResult->getNodeID();
+				spdlog::trace("{}: Strict Match -> {}", logTag, strictNodeId ? strictNodeId : "<null>");
 				return strictResult;
 			}
 		}
 
 		if (settings.mode == Config::Mode::Debug) {
-			spdlog::warn("{}: No strict match; allowing unfiltered node (debug)", logTag);
+			spdlog::debug("{}: No strict match; allowing unfiltered node (debug)", logTag);
 			return callOriginal(std::vector<Trait::ActorCondition>(acCopy), std::function<bool(Graph::Node*)>(nodePredCopy));
 		}
 
 		if (settings.mode != Config::Mode::Soft) {
-			spdlog::info("{}: No Match (strict pass did not find a node; mode is not Soft)", logTag);
+			spdlog::debug("{}: No Match (strict pass did not find a node; mode is not Soft)", logTag);
 			return nullptr;
 		}
 
@@ -82,7 +83,7 @@ namespace SizeDiff::Hooks::RandomNodeTwoPass
 		}
 
 		if (evaluatedNodes.empty()) {
-			spdlog::info("{}: No Match (soft gather: no node passed original + graph predicate)", logTag);
+			spdlog::debug("{}: No Match (soft gather: no node passed original + graph predicate)", logTag);
 			return nullptr;
 		}
 
@@ -103,6 +104,7 @@ namespace SizeDiff::Hooks::RandomNodeTwoPass
 		}
 
 		if (tied.empty()) {
+			spdlog::debug("{}: soft tie-break produced no candidate nodes", logTag);
 			return nullptr;
 		}
 
@@ -110,7 +112,8 @@ namespace SizeDiff::Hooks::RandomNodeTwoPass
 		std::uniform_int_distribution<std::size_t> dist(0, tied.size() - 1);
 		const std::size_t idx = dist(rng);
 		Graph::Node* const pick = tied[idx];
-		spdlog::info("{}: Soft Match -> {} (delta={})", logTag, pick->getNodeID(), best);
+		const char* const pickedNodeId = pick ? pick->getNodeID() : nullptr;
+		spdlog::debug("{}: Soft Match -> {} (delta={})", logTag, pickedNodeId ? pickedNodeId : "<null>", best);
 		return pick;
 	}
 }

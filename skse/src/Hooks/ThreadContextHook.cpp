@@ -18,14 +18,17 @@ namespace
 		std::vector<float> scales;
 		const uint32_t count = thread->getActorCount();
 		scales.reserve(count);
+		uint32_t fallbackCount = 0;
 		for (uint32_t i = 0; i < count; ++i) {
 			OStim::ThreadActor* ta = thread->getActor(i);
 			if (!ta) {
+				++fallbackCount;
 				scales.push_back(1.0f);
 				continue;
 			}
 			auto* actor = static_cast<RE::Actor*>(ta->getGameActor());
 			if (!actor) {
+				++fallbackCount;
 				scales.push_back(1.0f);
 				continue;
 			}
@@ -55,13 +58,16 @@ namespace
 				}
 			}
 
-			spdlog::info(
+			spdlog::trace(
 				"ScalesFromThread actor debug: race='{}' gender={} raceHeight={} refScale={} finalScale={}",
 				raceName,
 				gender,
 				raceHeight,
 				refScale,
 				finalScale);
+		}
+		if (fallbackCount > 0) {
+			spdlog::debug("ScalesFromThread used fallback scale 1.0 for {} actor slot(s)", fallbackCount);
 		}
 		return scales;
 	}
@@ -79,6 +85,7 @@ namespace
 			}
 			auto scales = ScalesFromThread(thread);
 			if (scales.empty()) {
+				spdlog::warn("threadRegistered(start): thread {} had zero actor scales; skipping cache update", thread->getThreadID());
 				return;
 			}
 
@@ -116,6 +123,9 @@ namespace
 			}
 			auto scales = ScalesFromThread(thread);
 			const uint32_t tid = static_cast<uint32_t>(thread->getThreadID());
+			if (scales.empty()) {
+				spdlog::debug("threadRegistered(node-change): thread {} produced empty scales", tid);
+			}
 			SizeDiff::State::NotifyThreadActive(tid);
 			SizeDiff::State::SetScales(tid, std::move(scales));
 			if (thread->isPlayerThread()) {
@@ -136,6 +146,7 @@ namespace
 				return;
 			}
 			const uint32_t tid = static_cast<uint32_t>(thread->getThreadID());
+			spdlog::debug("threadRegistered(stop): clearing cached scales for thread {}", tid);
 			SizeDiff::State::ClearScales(tid);
 			if (thread->isPlayerThread() && SizeDiff::State::GetPlayerThreadId() == tid) {
 				SizeDiff::State::SetPlayerThreadId(0);

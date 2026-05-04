@@ -61,6 +61,19 @@ Settings can be changed dynamically in-game via the **SKSE Menu Framework**, or 
 | **ApplyToPlayerScenes** | `True`       | Filter scenes involving the player character.                                               |
 | **ApplyToNpcScenes**    | `True`       | Filter scenes only involving NPCs.                                                          |
 | **ApplyInAutoMode**     | `True`       | Filter scenes during OStim's automatic progression.                                         |
+| **LogLevel**            | `info`       | Runtime logger verbosity (`trace`, `debug`, `info`, `warn`, `error`, `critical`).          |
+
+### Logging tiers
+
+The mod now emits structured event-style logs and supports runtime log-level changes from the INI and in-game menu:
+
+- `trace`: high-frequency internals (per-node / per-actor diagnostics).
+- `debug`: detailed fallback decisions and filtering outcomes.
+- `info`: lifecycle milestones and committed user-visible setting changes.
+- `warn`: degraded-but-running behavior (invalid config values, skipped files, unavailable optional paths).
+- `error`: failed operations (hook install failure, persistence write/replace failures).
+
+Common event IDs include `LOGGER_INIT`, `LOG_LEVEL_APPLIED`, `CONFIG_CHANGED`, `HOOK_RESOLVE`, `HOOK_RESOLVE_FAIL`, `SCENE_SCAN_SUMMARY`, and `OVERRIDE_SAVE_RETRY`.
 
 
 ### Exemptions & Overrides

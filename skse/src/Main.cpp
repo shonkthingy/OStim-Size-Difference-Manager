@@ -7,6 +7,7 @@
 #include "Hooks/ThreadContextHook.h"
 #include "SceneCache/SceneLoader.h"
 #include "UI/Menu.h"
+#include "Util/Log.h"
 #include "Util/Logger.h"
 
 #include "PCH.h"
@@ -27,6 +28,7 @@ namespace
 	void OnMessage(SKSE::MessagingInterface::Message* message)
 	{
 		if (!message) {
+			spdlog::warn("[SKSE_MESSAGE] null message received");
 			return;
 		}
 
@@ -61,11 +63,14 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
 		return true;
 	}
 
-	SizeDiff::Config::Load();
+	SizeDiff::Config::Load(SizeDiff::Log::ConfigSource::Startup);
 
 	auto* messaging = SKSE::GetMessagingInterface();
 	if (messaging) {
 		messaging->RegisterListener(OnMessage);
+		spdlog::debug("[SKSE_MESSAGING_LISTENER] status=registered");
+	} else {
+		spdlog::warn("[SKSE_MESSAGING_LISTENER] status=missing impact=no_postload_or_dataload_callbacks");
 	}
 
 	const auto contextOk = SizeDiff::Hooks::InstallThreadContextHooks();

@@ -4,6 +4,7 @@
 
 #include "OStimAPI/OstimNGThreadAPI.h"
 #include "Plugin.h"
+#include "Util/Log.h"
 #include "Util/State.h"
 
 namespace
@@ -13,6 +14,11 @@ namespace
 		static OstimNG_API::Thread::IThreadInterface* cached = OstimNG_API::Thread::GetAPI(
 			SizeDiff::kPluginName,
 			REL::Version(std::string_view(SizeDiff::kPluginVersion)));
+		static bool reportedNull = false;
+		if (!cached && !reportedNull) {
+			spdlog::warn("[FILTER_THREAD_API] unavailable; using state fallback thread resolution");
+			reportedNull = true;
+		}
 		return cached;
 	}
 
@@ -61,14 +67,17 @@ bool SizeDiff::Filter::ShouldBypassFiltering(uint32_t threadId, const Config::Se
 	const bool isPlayerScene = (threadId != 0 && playerThread != 0 && threadId == playerThread);
 
 	if (!settings.applyToPlayerScenes && isPlayerScene) {
+		spdlog::trace("filter bypassed: player scene filtering disabled (thread={})", threadId);
 		return true;
 	}
 	// "NPC" here means not the player-involved OStim thread, including threadId 0 (unknown / between scenes).
 	if (!settings.applyToNpcScenes && !isPlayerScene) {
+		spdlog::trace("filter bypassed: npc scene filtering disabled (thread={})", threadId);
 		return true;
 	}
 	// IsAutoMode(0) is false; if thread is unknown, auto-detect cannot apply this bypass.
 	if (!settings.applyInAutoMode && threadId != 0 && QueryIsAutoMode(threadId)) {
+		spdlog::trace("filter bypassed: auto mode filtering disabled (thread={})", threadId);
 		return true;
 	}
 	return false;

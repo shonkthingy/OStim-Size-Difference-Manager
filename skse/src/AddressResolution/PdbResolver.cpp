@@ -9,6 +9,7 @@ std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPdbSymbol(st
 {
 	const auto module = GetModuleHandleA("OStim.dll");
 	if (!module) {
+		spdlog::debug("[PDB_RESOLVE_SKIPPED] reason=ostim_module_missing symbol={}", mangledName);
 		return std::nullopt;
 	}
 
@@ -25,7 +26,7 @@ std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPdbSymbol(st
 	symbol->MaxNameLen = 511;
 
 	if (!SymFromName(process, mangledName.data(), symbol)) {
-		spdlog::warn("SymFromName failed for {}", mangledName);
+		spdlog::debug("SymFromName failed for {}", mangledName);
 		SymCleanup(process);
 		return std::nullopt;
 	}

@@ -62,6 +62,7 @@ namespace
 		const auto cache = SizeDiff::SceneCache::Get();
 		const char* const nodeId = dest->getNodeID();
 		if (!nodeId) {
+			spdlog::trace("fulfilledBy: destination node has null id; allowing navigation entry");
 			return true;
 		}
 
@@ -72,13 +73,13 @@ namespace
 
 		switch (settings.mode) {
 		case SizeDiff::Config::Mode::Strict:
-			spdlog::info("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
+			spdlog::debug("fulfilledBy: Hiding menu entry for '{}' (scale mismatch, tolerance={})", nodeId, tolerance);
 			return false;
 		case SizeDiff::Config::Mode::Soft:
-			spdlog::info("fulfilledBy: Soft: showing '{}' despite scale mismatch (tolerance={})", nodeId, tolerance);
+			spdlog::debug("fulfilledBy: Soft: showing '{}' despite scale mismatch (tolerance={})", nodeId, tolerance);
 			return true;
 		case SizeDiff::Config::Mode::Debug:
-			spdlog::warn("fulfilledBy: Debug: scale mismatch for '{}', but allowing (tolerance={})", nodeId, tolerance);
+			spdlog::debug("fulfilledBy: Debug: scale mismatch for '{}', but allowing (tolerance={})", nodeId, tolerance);
 			return true;
 		default:
 			return true;
@@ -89,7 +90,11 @@ namespace
 bool SizeDiff::Hooks::InstallMenuFilterHook()
 {
 	const auto version = SizeDiff::AddressResolution::GetOStimVersionString();
-	if (!version || !SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
+	if (!version) {
+		spdlog::warn("[HOOK_RESOLVE_FAIL] hook=fulfilledBy reason=missing_ostim_version");
+		return false;
+	}
+	if (!SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
 		return false;
 	}
 
@@ -98,8 +103,10 @@ bool SizeDiff::Hooks::InstallMenuFilterHook()
 		"?fulfilledBy@Navigation@Graph@@QEAA_NV?$vector@UActorCondition@Trait@@V?$allocator@UActorCondition@Trait@@@std@@@std@@@Z";
 
 	auto target = SizeDiff::AddressResolution::ResolveByPdbSymbol(kMangled);
+	const char* strategy = "pdb_mangled";
 	if (!target) {
 		target = SizeDiff::AddressResolution::ResolveByPdbSymbol("Graph::Navigation::fulfilledBy");
+		strategy = "pdb_undecorated";
 	}
 	if (!target) {
 		target = SizeDiff::AddressResolution::ResolveByPattern({
@@ -107,11 +114,13 @@ bool SizeDiff::Hooks::InstallMenuFilterHook()
 			// Dumped from OStim 7.4.x (RVA 0x1757E0)
 			.pattern = "48 89 5C 24 18 48 89 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8B F2 48 8B 39 48 8B 69 08 48 3B FD"
 		});
+		strategy = "pattern";
 	}
 	if (!target) {
 		spdlog::warn("Could not resolve Graph::Navigation::fulfilledBy; menu filtering disabled");
 		return false;
 	}
+	spdlog::debug("[HOOK_RESOLVE] hook=fulfilledBy strategy={} address=0x{:X}", strategy, *target);
 
 	const auto targetAddr = reinterpret_cast<void*>(*target);
 	if (MH_CreateHook(targetAddr, reinterpret_cast<void*>(&HookedFulfilledBy), reinterpret_cast<void**>(&g_originalFulfilledBy)) != MH_OK) {

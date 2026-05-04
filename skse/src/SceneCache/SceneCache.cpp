@@ -1,6 +1,7 @@
 #include "SceneCache/SceneCache.h"
 
 #include "Matching/HeightMatcher.h"
+#include "Util/Log.h"
 
 #include <cmath>
 
@@ -8,6 +9,7 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <filesystem>
 #include <fstream>
@@ -22,6 +24,7 @@ namespace
 	std::mutex g_mutex;
 	auto g_cache = std::make_shared<SizeDiff::SceneCache::Cache>();
 	const std::filesystem::path g_overridesPath{ "Data/SKSE/Plugins/OStimSizeDifferenceManager_Overrides.json" };
+	std::atomic_uint32_t g_overrideSaveRetryCount{ 0 };
 
 	std::string ToLower(std::string value)
 	{
@@ -73,7 +76,7 @@ void SizeDiff::SceneCache::Cache::LoadUserOverrides()
 
 	const std::filesystem::path& path = g_overridesPath;
 	if (!std::filesystem::exists(path)) {
-		spdlog::info("OStimSizeDifferenceManager: No overrides file at {}; using built-in rules only", path.string());
+		spdlog::debug("OStimSizeDifferenceManager: No overrides file at {}; using built-in rules only", path.string());
 		return;
 	}
 
@@ -107,6 +110,7 @@ void SizeDiff::SceneCache::Cache::LoadUserOverrides()
 	if (doc.contains("overrides") && doc["overrides"].is_object()) {
 		for (auto it = doc["overrides"].begin(); it != doc["overrides"].end(); ++it) {
 			if (!it.value().is_number()) {
+				spdlog::warn("OStimSizeDifferenceManager: Ignoring non-numeric override '{}' in {}", it.key(), path.string());
 				continue;
 			}
 			_overrides[ToLower(it.key())] = it.value().get<float>();
@@ -140,7 +144,16 @@ bool SizeDiff::SceneCache::Cache::IsReady() const
 bool SizeDiff::SceneCache::Cache::Matches(const std::string& sceneId, const std::vector<float>& actorScales, float tolerance) const
 {
 	std::scoped_lock lock(g_mutex);
-	if (!_ready || actorScales.empty()) {
+	if (!_ready) {
+		if (SizeDiff::Log::ShouldLogNow("scenecache_matches_not_ready", std::chrono::milliseconds(5000))) {
+			spdlog::trace("SceneCache::Matches bypassed because cache is not ready (sceneId='{}')", sceneId);
+		}
+		return true;
+	}
+	if (actorScales.empty()) {
+		if (SizeDiff::Log::ShouldLogNow("scenecache_matches_empty_scales", std::chrono::milliseconds(5000))) {
+			spdlog::trace("SceneCache::Matches bypassed because actor scales are empty (sceneId='{}')", sceneId);
+		}
 		return true;
 	}
 
@@ -358,7 +371,19 @@ bool SizeDiff::SceneCache::Cache::TryAutosave(std::chrono::steady_clock::time_po
 		}
 		_lastAutosaveAttempt = now;
 	}
-	return SaveUserOverrides();
+	const bool saved = SaveUserOverrides();
+	if (!saved && SizeDiff::Log::ShouldLogNow("scenecache_autosave_retry", std::chrono::milliseconds(10000))) {
+		const auto attempt = g_overrideSaveRetryCount.fetch_add(1) + 1;
+		spdlog::warn(
+			"[OVERRIDE_SAVE_RETRY] attempt={} path={} sinceFirstFailureMs={} lastError=persist_write_failed",
+			attempt,
+			g_overridesPath.string(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - _lastMutation).count());
+	}
+	if (saved) {
+		g_overrideSaveRetryCount.store(0);
+	}
+	return saved;
 }
 
 SizeDiff::SceneCache::PersistStatus SizeDiff::SceneCache::Cache::GetPersistStatus() const
@@ -422,13 +447,16 @@ void SizeDiff::SceneCache::Cache::ToggleExemption(const std::string& sceneId, bo
 {
 	std::scoped_lock lock(g_mutex);
 	const auto id = ToLower(sceneId);
+	const bool wasExempt = _exemptions.contains(id);
 	if (exempt) {
 		if (_exemptions.insert(id).second) {
 			MarkDirtyLocked();
+			spdlog::info("[EXEMPTION_CHANGED] source=ui scope=scene id={} oldState={} newState={}", id, wasExempt, true);
 		}
 	} else {
 		if (_exemptions.erase(id) > 0) {
 			MarkDirtyLocked();
+			spdlog::info("[EXEMPTION_CHANGED] source=ui scope=scene id={} oldState={} newState={}", id, wasExempt, false);
 		}
 	}
 }
@@ -437,13 +465,16 @@ void SizeDiff::SceneCache::Cache::TogglePackExemption(const std::string& packNam
 {
 	std::scoped_lock lock(g_mutex);
 	const auto pack = ToLower(packName);
+	const bool wasExempt = _exemptPacks.contains(pack);
 	if (exempt) {
 		if (_exemptPacks.insert(pack).second) {
 			MarkDirtyLocked();
+			spdlog::info("[EXEMPTION_CHANGED] source=ui scope=pack id={} oldState={} newState={}", pack, wasExempt, true);
 		}
 	} else {
 		if (_exemptPacks.erase(pack) > 0) {
 			MarkDirtyLocked();
+			spdlog::info("[EXEMPTION_CHANGED] source=ui scope=pack id={} oldState={} newState={}", pack, wasExempt, false);
 		}
 	}
 }
@@ -453,11 +484,17 @@ void SizeDiff::SceneCache::Cache::SetOverride(const std::string& sceneId, float 
 	std::scoped_lock lock(g_mutex);
 	const auto id = ToLower(sceneId);
 	const auto it = _overrides.find(id);
+	const float oldValue = (it != _overrides.end()) ? it->second : 0.0F;
 	if (it != _overrides.end() && std::fabs(it->second - diff) <= 1e-6F) {
 		return;
 	}
 	_overrides[id] = diff;
 	MarkDirtyLocked();
+	spdlog::debug(
+		"[OVERRIDE_CHANGED] source=cache sceneId={} oldValue={} newValue={} action=set_override",
+		id,
+		oldValue,
+		diff);
 }
 
 std::optional<SizeDiff::SceneCache::SceneScaleInfo> SizeDiff::SceneCache::Cache::GetSceneInfo(const std::string& sceneId) const

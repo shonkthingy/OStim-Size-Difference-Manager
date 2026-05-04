@@ -47,6 +47,7 @@ namespace
 
 		const auto scales = SizeDiff::State::GetScales(contextThread);
 		if (scales.empty()) {
+			spdlog::trace("getRandomNodeInRange: no scales for thread {}; bypassing size filter", contextThread);
 			return g_originalGetRandomNodeInRange(self, distance, std::move(actorConditions), std::move(nodeCondition));
 		}
 
@@ -67,13 +68,18 @@ namespace
 bool SizeDiff::Hooks::InstallNavigationHook()
 {
 	const auto version = SizeDiff::AddressResolution::GetOStimVersionString();
-	if (!version || !SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
+	if (!version) {
+		spdlog::warn("[HOOK_RESOLVE_FAIL] hook=getRandomNodeInRange reason=missing_ostim_version");
+		return false;
+	}
+	if (!SizeDiff::AddressResolution::IsKnownGoodVersion(*version)) {
 		return false;
 	}
 
 	constexpr auto kSymbol =
 		"?getRandomNodeInRange@Node@Graph@@QEAAPEAU12@HV?$vector@UActorCondition@Trait@@V?$allocator@UActorCondition@Trait@@@std@@@std@@V?$function@$$A6A_NPEAUNode@Graph@@@Z@4@@Z";
 	auto target = SizeDiff::AddressResolution::ResolveByPdbSymbol(kSymbol);
+	const char* strategy = "pdb_mangled";
 	if (!target) {
 		const char* const pat = SizeDiff::AddressResolution::UsesLegacyGraphBytePatterns(*version)
 			? "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 00 FF FF FF 48 81 EC 00 02 00 00 48 8B 05 ? ? ? ? 48 33 C4"
@@ -82,11 +88,13 @@ bool SizeDiff::Hooks::InstallNavigationHook()
 			.version = *version,
 			.pattern = pat,
 		});
+		strategy = "pattern";
 	}
 	if (!target) {
 		spdlog::warn("Could not resolve Graph::Node::getRandomNodeInRange; running without navigation hook");
 		return false;
 	}
+	spdlog::debug("[HOOK_RESOLVE] hook=getRandomNodeInRange strategy={} address=0x{:X}", strategy, *target);
 
 	const auto targetAddr = reinterpret_cast<void*>(*target);
 	if (MH_CreateHook(targetAddr, reinterpret_cast<void*>(&HookedGetRandomNodeInRange), reinterpret_cast<void**>(&g_originalGetRandomNodeInRange)) != MH_OK) {

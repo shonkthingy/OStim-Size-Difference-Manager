@@ -13,6 +13,7 @@
 #include "Plugin.h"
 #include "SceneCache/SceneCache.h"
 #include "UI/SKSEMenuFramework.h"
+#include "Util/Log.h"
 
 #include "PCH.h"
 #include "spdlog/spdlog.h"
@@ -56,6 +57,34 @@ namespace SizeDiff::UI
 			return n;
 		}
 
+		constexpr std::array<const char*, 6> kLogLevelLabels{
+			"Trace",
+			"Debug",
+			"Info",
+			"Warn",
+			"Error",
+			"Critical"
+		};
+
+		constexpr std::array<spdlog::level::level_enum, 6> kLogLevels{
+			spdlog::level::trace,
+			spdlog::level::debug,
+			spdlog::level::info,
+			spdlog::level::warn,
+			spdlog::level::err,
+			spdlog::level::critical
+		};
+
+		std::size_t FindLogLevelIndex(const spdlog::level::level_enum level)
+		{
+			for (std::size_t i = 0; i < kLogLevels.size(); ++i) {
+				if (kLogLevels[i] == level) {
+					return i;
+				}
+			}
+			return 2;
+		}
+
 		void UpdateExemptionsPageLifecycle(bool pageVisible, const std::shared_ptr<SceneCache::Cache>& cache)
 		{
 			using clock = std::chrono::steady_clock;
@@ -77,6 +106,7 @@ namespace SizeDiff::UI
 		{
 			g_configDraft = Config::Get();
 			auto& ui = g_configDraft;
+			const auto startingSettings = ui;
 			UpdateExemptionsPageLifecycle(false, SceneCache::Get());
 
 			if (ImGui::CollapsingHeader("Filtering Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -102,7 +132,7 @@ namespace SizeDiff::UI
 					"Off: OStim behaves as if this mod were not filtering scenes. "
 					"Strict: reject or hide choices that are outside the height spread tolerance. "
 					"Soft: if nothing matches exactly, use the closest playable scene. "
-					"Debug: same checks as strict, but when nothing matches, log a warning and allow any valid scene (for troubleshooting).");
+					"Debug: same checks as strict, but when nothing matches, log mismatch diagnostics and allow any valid scene.");
 
 				ImGui::SliderFloat("Height Difference Tolerance", &ui.tolerance, 0.0F, 0.5F, "%.3f");
 				ImGui::SetItemTooltip(
@@ -126,6 +156,16 @@ namespace SizeDiff::UI
 				ImGui::Dummy(ImVec2(0.0F, 6.0F));
 			}
 
+			if (ImGui::CollapsingHeader("Logging", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::Spacing();
+				int levelIndex = static_cast<int>(FindLogLevelIndex(ui.logLevel));
+				if (ImGui::Combo("Log Level", &levelIndex, kLogLevelLabels.data(), static_cast<int>(kLogLevelLabels.size()))) {
+					ui.logLevel = kLogLevels[static_cast<std::size_t>(levelIndex)];
+				}
+				ImGui::SetItemTooltip("Controls logger verbosity for this mod. Trace is most verbose; Critical is least.");
+				ImGui::Dummy(ImVec2(0.0F, 6.0F));
+			}
+
 			if (ImGui::CollapsingHeader("Persistence", ImGuiTreeNodeFlags_DefaultOpen)) {
 				ImGui::Spacing();
 				if (ImGui::Button("Reload from disk")) {
@@ -135,13 +175,20 @@ namespace SizeDiff::UI
 				ImGui::SetItemTooltip("Reload all settings from OStimSizeDifferenceManager.ini without saving the UI state.");
 				ImGui::SameLine();
 				if (ImGui::Button("Save Settings")) {
-					Config::Save();
+					Config::Save(Log::ConfigSource::UI);
 				}
 				ImGui::SetItemTooltip("Write current settings to OStimSizeDifferenceManager.ini.");
 				ImGui::Dummy(ImVec2(0.0F, 4.0F));
 			}
 
-			Config::Set(g_configDraft);
+			if (startingSettings.mode != ui.mode ||
+				std::fabs(startingSettings.tolerance - ui.tolerance) > 1e-6F ||
+				startingSettings.applyToPlayerScenes != ui.applyToPlayerScenes ||
+				startingSettings.applyToNpcScenes != ui.applyToNpcScenes ||
+				startingSettings.applyInAutoMode != ui.applyInAutoMode ||
+				startingSettings.logLevel != ui.logLevel) {
+				Config::SetFromSource(g_configDraft, Log::ConfigSource::UI);
+			}
 		}
 
 		struct OverrideDraftMeta
@@ -184,7 +231,7 @@ namespace SizeDiff::UI
 			if (!cache->IsReady()) {
 				ImGui::Spacing();
 				ImGui::TextUnformatted("Loading scene metadata…");
-				Config::Set(g_configDraft);
+				Config::SetFromSource(g_configDraft, Log::ConfigSource::UI);
 				return;
 			}
 
@@ -255,6 +302,11 @@ namespace SizeDiff::UI
 								continue;
 							}
 							cache->SetOverride(sceneId, packOvDraft);
+							spdlog::debug(
+								"[OVERRIDE_CHANGED] source=ui action=pack_apply packName={} sceneId={} newValue={}",
+								packName,
+								sceneId,
+								packOvDraft);
 							overrideDraftByScene[sceneId] = packOvDraft;
 							auto& meta = overrideDraftMeta[sceneId];
 							meta.hadKey = true;
@@ -378,6 +430,11 @@ namespace SizeDiff::UI
 
 							if (ImGui::IsItemDeactivatedAfterEdit()) {
 								cache->SetOverride(sceneId, draft);
+								spdlog::info(
+									"[OVERRIDE_CHANGED] source=ui action=row_edit packName={} sceneId={} newValue={}",
+									packName,
+									sceneId,
+									draft);
 								dmeta.hadKey = true;
 								dmeta.effective = draft;
 							}
@@ -390,6 +447,11 @@ namespace SizeDiff::UI
 							}
 							if (ImGui::Button("Reset##ovReset")) {
 								cache->SetOverride(sceneId, authored);
+								spdlog::info(
+									"[OVERRIDE_CHANGED] source=ui action=reset packName={} sceneId={} newValue={}",
+									packName,
+									sceneId,
+									authored);
 								draft = authored;
 								dmeta.hadKey = true;
 								dmeta.effective = authored;
@@ -469,6 +531,10 @@ namespace SizeDiff::UI
 								}
 								if (ImGui::IsItemDeactivatedAfterEdit()) {
 									cache->SetOverride(sceneId, draft);
+									spdlog::info(
+										"[OVERRIDE_CHANGED] source=ui action=row_edit packName=unindexed sceneId={} newValue={}",
+										sceneId,
+										draft);
 									dmeta.hadKey = true;
 									dmeta.effective = draft;
 								}
@@ -476,6 +542,10 @@ namespace SizeDiff::UI
 								ImGui::SameLine();
 								if (ImGui::Button("Reset##unidxOvReset")) {
 									cache->SetOverride(sceneId, authored);
+									spdlog::info(
+										"[OVERRIDE_CHANGED] source=ui action=reset packName=unindexed sceneId={} newValue={}",
+										sceneId,
+										authored);
 									draft = authored;
 									dmeta.hadKey = true;
 									dmeta.effective = authored;
@@ -504,7 +574,7 @@ namespace SizeDiff::UI
 			}
 			ImGui::SetItemTooltip("Changes autosave while this page is open and flush when you leave it.");
 
-			Config::Set(g_configDraft);
+			Config::SetFromSource(g_configDraft, Log::ConfigSource::UI);
 		}
 	}
 

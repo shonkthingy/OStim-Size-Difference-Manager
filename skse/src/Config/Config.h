@@ -1,7 +1,8 @@
 #pragma once
 
-#include <atomic>
 #include <string>
+
+#include "Util/Log.h"
 
 namespace SizeDiff::Config
 {
@@ -20,12 +21,14 @@ namespace SizeDiff::Config
 		bool applyToPlayerScenes{ true };
 		bool applyToNpcScenes{ true };
 		bool applyInAutoMode{ true };
+		spdlog::level::level_enum logLevel{ spdlog::level::info };
 	};
 
-	void Load();
+	void Load(Log::ConfigSource source = Log::ConfigSource::DiskLoad);
 	void Reload();
-	void Save();
+	void Save(Log::ConfigSource source = Log::ConfigSource::UI);
 	void Set(Settings settings);
+	void SetFromSource(Settings settings, Log::ConfigSource source);
 	Settings Get();
 	Mode GetMode();
 	float GetTolerance();

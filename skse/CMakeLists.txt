@@ -39,6 +39,7 @@ add_library(${PROJECT_NAME} SHARED
     src/Hooks/NavigationHook.cpp
     src/Hooks/ThreadContextHook.cpp
     src/UI/Menu.cpp
+    src/Util/Log.cpp
     src/Util/State.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)

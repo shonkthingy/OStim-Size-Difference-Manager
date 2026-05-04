@@ -29,6 +29,7 @@ cmake_install.cmake
 # Other IDEs
 .idea/
 .vscode/
+.cursor/
 
 # OS
 Thumbs.db

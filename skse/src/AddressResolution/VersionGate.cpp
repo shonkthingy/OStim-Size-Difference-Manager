@@ -26,28 +26,33 @@ std::optional<std::string> SizeDiff::AddressResolution::GetOStimVersionString()
 {
 	const auto h = GetModuleHandleA("OStim.dll");
 	if (!h) {
+		spdlog::warn("[OSTIM_VERSION_QUERY_FAIL] step=GetModuleHandleA reason=module_not_loaded");
 		return std::nullopt;
 	}
 
 	char modulePath[MAX_PATH]{};
 	if (!GetModuleFileNameA(h, modulePath, MAX_PATH)) {
+		spdlog::warn("[OSTIM_VERSION_QUERY_FAIL] step=GetModuleFileNameA error={}", GetLastError());
 		return std::nullopt;
 	}
 
 	DWORD handle = 0;
 	const auto size = GetFileVersionInfoSizeA(modulePath, &handle);
 	if (size == 0) {
+		spdlog::warn("[OSTIM_VERSION_QUERY_FAIL] step=GetFileVersionInfoSizeA error={}", GetLastError());
 		return std::nullopt;
 	}
 
 	std::vector<char> versionData(size);
 	if (!GetFileVersionInfoA(modulePath, 0, size, versionData.data())) {
+		spdlog::warn("[OSTIM_VERSION_QUERY_FAIL] step=GetFileVersionInfoA error={}", GetLastError());
 		return std::nullopt;
 	}
 
 	VS_FIXEDFILEINFO* info = nullptr;
 	UINT infoSize = 0;
 	if (!VerQueryValueA(versionData.data(), "\\", reinterpret_cast<LPVOID*>(&info), &infoSize) || !info) {
+		spdlog::warn("[OSTIM_VERSION_QUERY_FAIL] step=VerQueryValueA reason=missing_fixed_file_info");
 		return std::nullopt;
 	}
 

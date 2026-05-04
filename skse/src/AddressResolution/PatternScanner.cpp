@@ -20,7 +20,12 @@ namespace
             if (token == "?" || token == "??") {
                 result.push_back({ 0, true });
             } else {
-                result.push_back({ static_cast<uint8_t>(std::stoul(token, nullptr, 16)), false });
+                try {
+                    result.push_back({ static_cast<uint8_t>(std::stoul(token, nullptr, 16)), false });
+                } catch (const std::exception& e) {
+                    spdlog::error("[PATTERN_PARSE_FAIL] token={} error={}", token, e.what());
+                    return {};
+                }
             }
         }
         return result;
@@ -65,6 +70,10 @@ std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPattern(cons
     const auto* section = IMAGE_FIRST_SECTION(ntHeaders);
 
     const auto parsed = ParsePattern(def.pattern);
+    if (parsed.empty()) {
+        spdlog::error("PatternScanner: could not parse pattern for version '{}'", def.version);
+        return std::nullopt;
+    }
 
     for (WORD i = 0; i < ntHeaders->FileHeader.NumberOfSections; ++i, ++section) {
         // Scan executable sections (typically .text)
@@ -76,7 +85,7 @@ std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPattern(cons
         const uint8_t* match = ScanRegion(regionStart, regionSize, parsed);
         if (match) {
             const auto address = reinterpret_cast<std::uintptr_t>(match);
-            spdlog::info("PatternScanner: found '{}' at 0x{:X} (section {})",
+            spdlog::debug("PatternScanner: found '{}' at 0x{:X} (section {})",
                 def.version, address,
                 std::string(reinterpret_cast<const char*>(section->Name), 8));
             return address;

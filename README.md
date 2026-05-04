@@ -185,6 +185,8 @@ A full list of follow-up work, edge cases, and future ideas is in `TODO.md`.
 
 ## Build (Developer)
 
+Contributor-focused architecture (module map, hooks, data flow): [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 ### Toolchain
 
 - Windows + **MSVC** (Visual Studio 2022)

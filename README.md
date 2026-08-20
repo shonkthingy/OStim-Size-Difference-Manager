@@ -164,13 +164,17 @@ Hook addresses are resolved in this order:
 1. **PDB symbol lookup** (if debug symbols for `OStim.dll` are available)
 2. **Version-specific byte patterns** baked into the hook installers (documented in `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`; the DLL does not read that JSON at runtime)
 
-PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, and **7.5.0.1** through **7.5.0.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
+PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, and **7.5.0.0** through **7.5.0.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
 
 To add support for a new OStim **FileVersion**, extend `kKnownVersions`, update patterns in the three hook `.cpp` files if the prologue changes, and sync `OStimSizeDifferenceManager-Signatures.json`.
 
 ---
 
 ## Changelog
+
+### v1.0.5
+
+- **OStim builds:** Recognize the **7.5.0.0** PE `FileVersion` used by the current OStim 7.5.0.3 release so filtering hooks are installed.
 
 ### v1.0.4
 
@@ -209,7 +213,7 @@ A full list of follow-up work, edge cases, and future ideas is in `TODO.md`.
 
 ## Build (Developer)
 
-Contributor-focused documentation: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, hooks, and data flow) and [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) (commit, versioning, build, and release conventions).
+Contributors should start with the [contributor guide](docs/CONTRIBUTING.md), which defines the repository's commit, versioning, build, release-packaging, and documentation standards. The [architecture reference](docs/ARCHITECTURE.md) provides the module map, hooks, and data flow.
 
 ### Toolchain
 

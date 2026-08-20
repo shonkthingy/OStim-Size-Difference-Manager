@@ -3,5 +3,5 @@
 namespace SizeDiff
 {
 	inline constexpr auto kPluginName = "OStimSizeDifferenceManager";
-	inline constexpr auto kPluginVersion = "1.0.3";
+	inline constexpr auto kPluginVersion = "1.0.4";
 }

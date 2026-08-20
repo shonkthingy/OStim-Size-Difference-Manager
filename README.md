@@ -13,7 +13,7 @@ Scenes that were authored for same-height actors are hidden or skipped when the 
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Skyrim SE / AE**                                                                                | Both supported via Address Library                                                                                                                                                                                              |
 | **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/30379)**                           | Required                                                                                                                                                                                                                        |
-| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested with **7.4.0.3**; see *How it works* below                                                                                                                                                                               |
+| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested with **7.5.0.3**; supports the versions listed below; see *How it works* below                                                                                                                                                                               |
 | **[Address Library For SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required                                                                                                                                                                                                                        |
 | **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/120352)**             | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it).                                                                                                                                            |
 | **Size-Difference Animations**                                                                    | *Soft Requirement*. This mod filters scenes so that size-difference actors only use size-difference animations. You will need actual OStim animation packs designed for different sized actors installed for this to be useful. |
@@ -164,13 +164,17 @@ Hook addresses are resolved in this order:
 1. **PDB symbol lookup** (if debug symbols for `OStim.dll` are available)
 2. **Version-specific byte patterns** baked into the hook installers (documented in `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`; the DLL does not read that JSON at runtime)
 
-PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4** and **7.4.0.0** through **7.4.0.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
+PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, and **7.5.0.1** through **7.5.0.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
 
 To add support for a new OStim **FileVersion**, extend `kKnownVersions`, update patterns in the three hook `.cpp` files if the prologue changes, and sync `OStimSizeDifferenceManager-Signatures.json`.
 
 ---
 
 ## Changelog
+
+### v1.0.4
+
+- **OStim builds:** Added support for OStim **7.5.0.1**, **7.5.0.2**, and **7.5.0.3**.
 
 ### v1.0.3
 
@@ -209,24 +213,26 @@ Contributor-focused architecture (module map, hooks, data flow): [`docs/ARCHITEC
 
 ### Toolchain
 
-- Windows + **MSVC** (Visual Studio 2022)
+- Windows PowerShell + **MSVC** (Visual Studio 2022 or newer, with the Desktop development with C++ workload)
 - **CMake** 3.21+
 - **Ninja**
-- **vcpkg** with the `x64-windows-skse` triplet (set `VCPKG_ROOT` env var)
+- **vcpkg** with the `x64-windows-skse` triplet (set the `VCPKG_ROOT` environment variable)
 - **CommonLibSSE-NG** at `extern/CommonLibSSE-NG`
 - vcpkg packages: `minhook`, `spdlog`, `nlohmann_json` (see `skse/vcpkg.json`)
 
 ### Build commands
 
+Run these commands from the repository's `Master/` directory in PowerShell:
+
 ```powershell
-# Release
+# Release (default; required for in-game ABI compatibility)
 ./build.ps1 -Preset build-release-msvc
 
-# Debug
+# Debug (compile checks only)
 ./build.ps1 -Preset build-debug-msvc
 ```
 
-The post-build step copies the output DLL to `data/SKSE/Plugins/` automatically.
+The wrapper locates Visual Studio using `vswhere`, initializes the x64 MSVC environment, runs CMake/vcpkg, and builds the selected preset. The post-build step copies the output DLL to `data/SKSE/Plugins/` automatically. If PowerShell execution policy blocks the script, use `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Preset build-release-msvc`.
 
 The plugin logs `_MSC_FULL_VER` and `_MSVC_STL_VERSION` on load to help diagnose ABI mismatches with `OStim.dll`.
 

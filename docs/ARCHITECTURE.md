@@ -4,8 +4,9 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 
 **Primary references**
 
-- In-repo layout summary: `[.cursor/rules/project-layout.mdc](../.cursor/rules/project-layout.mdc)`
-- Windows / MSVC build pitfalls: `[.cursor/rules/build-and-toolchain.mdc](../.cursor/rules/build-and-toolchain.mdc)`
+- Player-facing requirements, installation, configuration, and developer build instructions: [`README.md`](../README.md)
+- CMake configure/build presets: [`skse/CMakePresets.json`](../skse/CMakePresets.json)
+- Windows build wrapper: [`build.ps1`](../build.ps1)
 
 ## Table of contents
 
@@ -75,7 +76,7 @@ This plugin loads `SKSEMenuFramework.dll` exports at runtime. The repo vendors a
 | Address resolution      | `skse/src/AddressResolution/`                         | Version gate, PDB, patterns.                           |
 | State                   | `skse/src/Util/`                                      | `State.cpp`, `Logger.h`.                               |
 | Ship patterns           | `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`                   | Version-keyed byte patterns for pattern fallback.      |
-| Build                   | `skse/CMakeLists.txt`, `skse/vcpkg.json`, `build.ps1` | Release build is the default; post-build copies DLL to `data/SKSE/Plugins/`. |
+| Build                   | `skse/CMakeLists.txt`, `skse/CMakePresets.json`, `skse/vcpkg.json`, `build.ps1` | Release build is the default; the wrapper initializes MSVC, runs the CMake preset, and the post-build step copies the DLL to `data/SKSE/Plugins/`. |
 
 
 ## Runtime lifecycle
@@ -195,7 +196,7 @@ The hook targets pass MSVC STL types (`std::vector<Trait::ActorCondition>`, `std
 
 ## Pitfalls and operational notes
 
-1. **Build environment**: MSVC standard library headers require a Visual Studio developer environment or `vcvars64` in the shell session before CMake build (details in `.cursor/rules/build-and-toolchain.mdc`).
+1. **Build environment**: The supported build path is Windows PowerShell with Visual Studio C++ tools, CMake, Ninja, and vcpkg. `build.ps1` locates Visual Studio with `vswhere`, initializes `vcvars64.bat`, and invokes the selected CMake preset. Set `VCPKG_ROOT` before building.
 2. **Release ABI required**: Hooked OStim functions cross DLL boundaries with STL types by value. Debug builds are useful for compile checks only; validate behavior with `build-release-msvc` / `./build.ps1`.
 3. **Unknown OStim version**: Hooks silently skip installation; logs show `Unknown OStim.dll version` and per-hook `Could not resolve` warnings.
 4. **Verbose logging**: `ThreadContextHook.cpp` logs each actor’s scale breakdown at **info** level when threads start or nodes change — noisy during active scenes.

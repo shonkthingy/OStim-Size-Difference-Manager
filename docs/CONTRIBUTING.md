@@ -42,7 +42,18 @@ Allowed subject prefixes are:
 - `test:` — tests or validation changes.
 - `release:` — the single commit that prepares a versioned release.
 
-Use an imperative, concise subject, keep it lowercase after the prefix, and do not end it with punctuation. A release should normally be one squashed commit named exactly `release: vX.Y.Z`.
+Use an imperative, concise subject, keep it lowercase after the prefix, and do not end the subject with punctuation. A release should normally be one squashed commit named exactly `release: vX.Y.Z`.
+
+Release commits must also include a short body describing the user-visible changes and validation performed. Keep the body focused: use one bullet per meaningful change and mention the release build or smoke test when applicable. For example:
+
+```text
+release: v1.0.5
+
+- Recognize OStim PE FileVersion 7.5.0.0 so all filtering hooks install.
+- Build and smoke-test the release DLL in-game.
+```
+
+Do not leave release commits with only the subject line.
 
 ## Versioning
 

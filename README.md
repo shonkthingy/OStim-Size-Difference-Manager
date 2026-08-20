@@ -209,7 +209,7 @@ A full list of follow-up work, edge cases, and future ideas is in `TODO.md`.
 
 ## Build (Developer)
 
-Contributor-focused architecture (module map, hooks, data flow): [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Contributor-focused documentation: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, hooks, and data flow) and [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) (commit, versioning, build, and release conventions).
 
 ### Toolchain
 

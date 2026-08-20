@@ -5,6 +5,7 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 **Primary references**
 
 - Player-facing requirements, installation, configuration, and developer build instructions: [`README.md`](../README.md)
+- Contributor conventions, commit naming, and release packaging: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - CMake configure/build presets: [`skse/CMakePresets.json`](../skse/CMakePresets.json)
 - Windows build wrapper: [`build.ps1`](../build.ps1)
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 project(
     OStimSizeDifferenceManager
-	VERSION 1.0.5
+	VERSION 1.0.7
     LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -61,7 +61,7 @@ else ()
             nlohmann_json::nlohmann_json)
 endif ()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Dbghelp Version)
+target_link_libraries(${PROJECT_NAME} PRIVATE dbghelp.lib version.lib)
 
 set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/../data")
 set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")

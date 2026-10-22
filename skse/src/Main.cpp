@@ -13,15 +13,18 @@
 #include "PCH.h"
 #include "spdlog/spdlog.h"
 
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
-	SKSE::PluginVersionData v{};
-	v.PluginName(SizeDiff::kPluginName);
-	v.PluginVersion(1);
-	v.UsesAddressLibrary(true);
-	v.HasNoStructUse(true);
-	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST });
-	return v;
-}();
+// SKSE 2.3.x (Skyrim SE 1.7.x / AE) reads SKSEPlugin_Version only and never calls
+// SKSEPlugin_Query, while SKSE 2.0.x on SE 1.5.97 routes through SKSEPlugin_Query.
+// SKSEPluginInfo emits both exports so a single DLL is accepted by either loader.
+//
+// Version-independent via Address Library, so no runtime version list is needed or consulted.
+// StructCompatibility::Independent also sets kVersionIndependentEx_AddressLibraryV5, which
+// SKSE 2.3.1 requires for the Address Library encoding used by 1.7.99+.
+SKSEPluginInfo(
+	.Version = { 1, 0, 6, 0 },  // keep in sync with SizeDiff::kPluginVersion
+	.Name = SizeDiff::kPluginName,
+	.StructCompatibility = SKSE::StructCompatibility::Independent,
+	.RuntimeCompatibility = { SKSE::VersionIndependence::AddressLibrary });
 
 namespace
 {

@@ -8,7 +8,7 @@ Thank you for contributing to OStim Size Difference Manager. This document recor
 - `skse/CMakeLists.txt` and `skse/CMakePresets.json` — build configuration.
 - `data/` — installable Skyrim `Data/` files that are safe to track.
 - `docs/` — contributor and architecture documentation.
-- `extern/CommonLibSSE-NG/` — CommonLibSSE-NG submodule.
+- `extern/CommonLibSSE-NG/` — CommonLibSSE-NG submodule, tracked at [alandtse/CommonLibSSE-NG](https://github.com/alandtse/CommonLibSSE-NG) (`ng` branch, pinned to a release tag). It is **not** the upstream CharmedBaryon fork; see `README.md` (Changelog v1.0.6) for why.
 - `skse/build/` — local build output; never commit it.
 
 Generated binaries and intermediate files are intentionally ignored. In particular, do not commit:
@@ -86,7 +86,7 @@ The JSON signature manifest is documentation and tooling data; the DLL uses the 
 
 ## Building
 
-Build from the repository's `Master/` directory in Windows PowerShell. Set `VCPKG_ROOT` and install Visual Studio with the Desktop development with C++ workload, CMake 3.21+, Ninja, and `vswhere`.
+Build from the repository's `Master/` directory — Windows PowerShell (native MSVC) or Linux (`build.sh`, `clang-cl` cross-compile). Set `VCPKG_ROOT`; on Windows install Visual Studio with the Desktop development with C++ workload, CMake 3.21+, Ninja, and `vswhere`; on Linux see the *Toolchain* section of `README.md` for the one-time setup. Initialize submodules with `git submodule update --init --recursive` before the first build (`extern/CommonLibSSE-NG` vendors `openvr`, required at link time).
 
 ```powershell
 # Release build — use this for ABI validation and packaging
@@ -96,7 +96,17 @@ Build from the repository's `Master/` directory in Windows PowerShell. Set `VCPK
 ./build.ps1 -Preset build-debug-msvc
 ```
 
-`build.ps1` initializes the x64 MSVC environment, runs vcpkg/CMake, and copies the built DLL to `data/SKSE/Plugins/` for local testing. Remove the copied DLL and `skse/build/` before committing.
+On Linux, use the `clang-cl` cross-compile presets (same MSVC-ABI output; release configuration is still required for ABI validation and packaging):
+
+```bash
+# Release build — use this for ABI validation and packaging
+./build.sh
+
+# Debug build — compile checks only
+./build.sh build-debug-linux-clangcl
+```
+
+`build.ps1` initializes the x64 MSVC environment, runs vcpkg/CMake, and copies the built DLL to `data/SKSE/Plugins/` for local testing; `build.sh` verifies the cross toolchain and runs the same presets. Remove the copied DLL and `skse/build/` before committing.
 
 ## Release packaging
 

@@ -48,6 +48,25 @@
       }
     },
     {
+      "name": "clangcl",
+      "hidden": true,
+      "environment": {
+        "COMMONLIBSSE_COMPILER": "/permissive- /Zc:preprocessor /EHsc $penv{CXXFLAGS}"
+      }
+    },
+    {
+      "name": "vcpkg-linux-clangcl",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-clangcl",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/../extern/CommonLibSSE-NG/examples/linux-cross-compile/custom-triplets",
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/../extern/CommonLibSSE-NG/examples/linux-cross-compile/custom-ports",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/../extern/CommonLibSSE-NG/cmake/toolchain-linux-clangcl.cmake",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      }
+    },
+    {
       "name": "build-release-msvc",
       "inherits": [
         "base",
@@ -82,6 +101,42 @@
           "value": "Debug"
         }
       }
+    },
+    {
+      "name": "build-release-linux-clangcl",
+      "inherits": [
+        "base",
+        "vcpkg-linux-clangcl",
+        "win32-unicode",
+        "x64",
+        "clangcl"
+      ],
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release-linux-clangcl",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "RelWithDebInfo"
+        }
+      }
+    },
+    {
+      "name": "build-debug-linux-clangcl",
+      "inherits": [
+        "base",
+        "vcpkg-linux-clangcl",
+        "win32-unicode",
+        "x64",
+        "clangcl"
+      ],
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug-linux-clangcl",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        }
+      }
     }
   ],
   "buildPresets": [
@@ -92,6 +147,14 @@
     {
       "name": "debug-msvc",
       "configurePreset": "build-debug-msvc"
+    },
+    {
+      "name": "release-linux-clangcl",
+      "configurePreset": "build-release-linux-clangcl"
+    },
+    {
+      "name": "debug-linux-clangcl",
+      "configurePreset": "build-debug-linux-clangcl"
     }
   ]
 }

@@ -11,9 +11,9 @@ Scenes that were authored for same-height actors are hidden or skipped when the 
 
 | Requirement                                                                                       | Notes                                                                                                                                                                                                                           |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Skyrim SE / AE**                                                                                | Both supported via Address Library                                                                                                                                                                                              |
+| **Skyrim SE / AE**                                                                                | **1.5.97**, **1.6.x** and **1.7.x** are all supported by the **same DLL** via Address Library                                                                                                                                    |
 | **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/30379)**                           | Required                                                                                                                                                                                                                        |
-| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested with **7.5.0.3**; supports the versions listed below; see *How it works* below                                                                                                                                                                               |
+| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested in-game with **7.5.0.3**; hook signatures additionally validated against the shipped **7.5.1** / **7.5.1a** / **7.5.1b** / **7.5.1c** binaries. Supports the versions listed below; see *How it works* below                                                                        |
 | **[Address Library For SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required                                                                                                                                                                                                                        |
 | **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/120352)**             | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it).                                                                                                                                            |
 | **Size-Difference Animations**                                                                    | *Soft Requirement*. This mod filters scenes so that size-difference actors only use size-difference animations. You will need actual OStim animation packs designed for different sized actors installed for this to be useful. |
@@ -164,13 +164,28 @@ Hook addresses are resolved in this order:
 1. **PDB symbol lookup** (if debug symbols for `OStim.dll` are available)
 2. **Version-specific byte patterns** baked into the hook installers (documented in `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`; the DLL does not read that JSON at runtime)
 
-PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, and **7.5.0.0** through **7.5.0.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
+PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, **7.5.0.0** through **7.5.0.3**, **7.5.1.0**, **7.5.1.2** and **7.5.1.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
+
+Note that OStim **7.5.1** and **7.5.1a** both report PE FileVersion **7.5.1.0** (they share one signature set), while **7.5.1b** reports **7.5.1.2** and **7.5.1c** reports **7.5.1.3**.
 
 To add support for a new OStim **FileVersion**, extend `kKnownVersions`, update patterns in the three hook `.cpp` files if the prologue changes, and sync `OStimSizeDifferenceManager-Signatures.json`.
 
 ---
 
 ## Changelog
+
+### v1.0.7
+
+- **OStim builds:** Recognize OStim **7.5.1c** (PE FileVersion `7.5.1.3`). Hook patterns and PDB symbol decorations are unchanged and were re-verified against the shipped `OStim.dll` + `OStim.pdb` (every pattern hit lands on the PDB symbol RVA). The 7.5.1c delta (a new `requestInterfaceMap` export) does not affect the hooked call sites, the plugin interface ABI, or the scene JSON schema.
+
+### v1.0.6
+
+- **Skyrim SE 1.5.97:** the plugin now also exports `SKSEPlugin_Query`, so SKSE 2.0.x on Skyrim SE 1.5.97 loads it. Previously only `SKSEPlugin_Version` was exported, which that loader never reads, so the plugin was silently skipped.
+- **Skyrim 1.7.x:** moved to [alandtse/CommonLibSSE-NG](https://github.com/alandtse/CommonLibSSE-NG) `v11.0.0` so one DLL covers Skyrim SE 1.5.97, AE 1.6.x and 1.7.x. The plugin now advertises `kVersionIndependentEx_AddressLibraryV5`, which SKSE 2.3.1 requires for the Address Library encoding used by 1.7.99+.
+- **Plugin declaration:** now version-independent via Address Library with no runtime version list, matching how OStim itself declares compatibility.
+- **OStim builds:** Recognize OStim **7.5.1** / **7.5.1a** (PE FileVersion `7.5.1.0`) and **7.5.1b** (`7.5.1.2`). Hook patterns are unchanged and were re-verified against the shipped `OStim.dll` + `OStim.pdb` (every pattern hit lands on the PDB symbol RVA).
+- **PDB lookup:** Fixed the `Graph::GraphTable::getRandomNode` symbol decoration (`Furniture::FurnitureType` is a `struct`, not a `class`), so PDB-based resolution now matches instead of silently falling back to pattern scanning.
+- **Build:** Added a Linux-hosted cross-compile build path (`build.sh`, `clang-cl` + `lld-link` + `xwin`) that produces the same MSVC-ABI DLL; the Windows/MSVC build is unchanged.
 
 ### v1.0.5
 
@@ -217,16 +232,30 @@ Contributors should start with the [contributor guide](docs/CONTRIBUTING.md), wh
 
 ### Toolchain
 
+The Windows build path uses native MSVC; the Linux build path cross-compiles the same MSVC-ABI DLL with `clang-cl`. Both are suitable for in-game testing and releases.
+
+**Windows (native MSVC)**
+
 - Windows PowerShell + **MSVC** (Visual Studio 2022 or newer, with the Desktop development with C++ workload)
 - **CMake** 3.21+
 - **Ninja**
 - **vcpkg** with the `x64-windows-skse` triplet (set the `VCPKG_ROOT` environment variable)
-- **CommonLibSSE-NG** at `extern/CommonLibSSE-NG`
-- vcpkg packages: `minhook`, `spdlog`, `nlohmann_json` (see `skse/vcpkg.json`)
+- **[CommonLibSSE-NG](https://github.com/alandtse/CommonLibSSE-NG)** at `extern/CommonLibSSE-NG` (git submodule, `ng` branch, pinned to tag `v11.0.0`)
+- vcpkg packages: `minhook`, `spdlog`, `nlohmann_json` plus CommonLibSSE-NG's own dependencies (`directxmath`, `directxtk`, `fmt`, `rapidcsv`, `simpleini`, `toml11`, `xbyak`; see `skse/vcpkg.json`)
+
+**Linux (clang-cl cross-compile)** — same MSVC ABI, built on a Linux host:
+
+- **clang-cl**, **lld-link**, **llvm-rc**, **llvm-mt** (LLVM/Clang)
+- **CMake** 3.21+ and **Ninja**
+- **vcpkg** (set `VCPKG_ROOT`; the presets build the `x64-windows-clangcl` triplet from `extern/CommonLibSSE-NG/examples/linux-cross-compile/` automatically)
+- Windows SDK + MSVC CRT sysroot staged with [`xwin`](https://github.com/Jake-Shadle/xwin) — `xwin splat` with `--use-winsysroot-style --preserve-ms-arch-notation` into `~/xwin-out` (override with `XWIN_SYSROOT`)
+- **Wine** and **llvm-mingw** (`x86_64-w64-mingw32-clang++`) — only to build the `fxc2` shader-compiler stand-in that the `directxtk` dependency needs (see `extern/CommonLibSSE-NG/examples/linux-cross-compile/README.md`)
 
 ### Build commands
 
-Run these commands from the repository's `Master/` directory in PowerShell:
+Initialize submodules first (`git submodule update --init --recursive`) — `extern/CommonLibSSE-NG` vendors `openvr`, whose `openvr_api.lib` is required at link time.
+
+On Windows, run these commands from the repository's `Master/` directory in PowerShell:
 
 ```powershell
 # Release (default; required for in-game ABI compatibility)
@@ -236,7 +265,17 @@ Run these commands from the repository's `Master/` directory in PowerShell:
 ./build.ps1 -Preset build-debug-msvc
 ```
 
-The wrapper locates Visual Studio using `vswhere`, initializes the x64 MSVC environment, runs CMake/vcpkg, and builds the selected preset. The post-build step copies the output DLL to `data/SKSE/Plugins/` automatically. If PowerShell execution policy blocks the script, use `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Preset build-release-msvc`.
+On Linux, run `build.sh` from the same directory (presets `build-release-linux-clangcl` / `build-debug-linux-clangcl`):
+
+```bash
+# Release (default; required for in-game ABI compatibility)
+./build.sh
+
+# Debug (compile checks only)
+./build.sh build-debug-linux-clangcl
+```
+
+The Windows wrapper locates Visual Studio using `vswhere`, initializes the x64 MSVC environment, runs CMake/vcpkg, and builds the selected preset. The Linux wrapper (`build.sh`) verifies the cross toolchain (clang-cl/lld-link, `xwin` sysroot, vcpkg, llvm-mingw) and runs the same CMake presets. In both cases the post-build step copies the output DLL to `data/SKSE/Plugins/` automatically. If PowerShell execution policy blocks the script, use `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Preset build-release-msvc`.
 
 The plugin logs `_MSC_FULL_VER` and `_MSVC_STL_VERSION` on load to help diagnose ABI mismatches with `OStim.dll`.
 

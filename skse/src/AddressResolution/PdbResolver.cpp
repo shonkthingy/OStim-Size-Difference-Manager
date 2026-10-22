@@ -3,7 +3,7 @@
 #include "PCH.h"
 #include "spdlog/spdlog.h"
 
-#pragma comment(lib, "Dbghelp.lib")
+#pragma comment(lib, "dbghelp.lib")
 
 std::optional<std::uintptr_t> SizeDiff::AddressResolution::ResolveByPdbSymbol(std::string_view mangledName)
 {

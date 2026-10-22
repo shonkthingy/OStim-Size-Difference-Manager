@@ -8,6 +8,7 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 - Contributor conventions, commit naming, and release packaging: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - CMake configure/build presets: [`skse/CMakePresets.json`](../skse/CMakePresets.json)
 - Windows build wrapper: [`build.ps1`](../build.ps1)
+- Linux build wrapper (clang-cl cross-compile): [`build.sh`](../build.sh)
 
 ## Table of contents
 
@@ -31,7 +32,7 @@ This document describes how the **OStim Size Difference Manager** SKSE plugin is
 
 | Path                                            | Role                                                                                                                                                               |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `skse/src/Main.cpp`                             | SKSE load: MinHook init, logger, optional early exit if `OStim.dll` missing, config load, messaging listener, hook installation, `kDataLoaded` scene scan kickoff. |
+| `skse/src/Main.cpp`                             | SKSE plugin declaration (`SKSEPluginInfo`) + load: MinHook init, logger, optional early exit if `OStim.dll` missing, config load, messaging listener, hook installation, `kDataLoaded` scene scan kickoff. |
 | `skse/src/Plugin.h`                             | `kPluginName`, `kPluginVersion` (used when requesting OStim NG thread API).                                                                                        |
 | `skse/src/Hooks/ThreadContextHook.cpp`          | After `kPostLoad`: OStim interface exchange, `ThreadInterface` listener registration, per-thread scale capture into `Util/State`.                                  |
 | `skse/src/Hooks/GetRandomNodeHook.cpp`          | MinHook on `Graph::GraphTable::getRandomNode` (initial / table-driven random node selection).                                                                      |
@@ -77,7 +78,7 @@ This plugin loads `SKSEMenuFramework.dll` exports at runtime. The repo vendors a
 | Address resolution      | `skse/src/AddressResolution/`                         | Version gate, PDB, patterns.                           |
 | State                   | `skse/src/Util/`                                      | `State.cpp`, `Logger.h`.                               |
 | Ship patterns           | `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`                   | Version-keyed byte patterns for pattern fallback.      |
-| Build                   | `skse/CMakeLists.txt`, `skse/CMakePresets.json`, `skse/vcpkg.json`, `build.ps1` | Release build is the default; the wrapper initializes MSVC, runs the CMake preset, and the post-build step copies the DLL to `data/SKSE/Plugins/`. |
+| Build                   | `skse/CMakeLists.txt`, `skse/CMakePresets.json`, `skse/vcpkg.json`, `build.ps1`, `build.sh` | Release build is the default; the wrapper initializes MSVC, runs the CMake preset, and the post-build step copies the DLL to `data/SKSE/Plugins/`. |
 
 
 ## Runtime lifecycle
@@ -193,12 +194,13 @@ Each supported PE version should have patterns for all three hooked symbols in `
 
 Headers under `skse/src/OStimTypes/` provide layouts and method names used across hooks (`Graph::Node`, `Graph::Navigation`, `Trait::ActorCondition`, furniture types, etc.). If OStim’s C++ ABI changes, update these **together** with patterns / PDB strings and validate in game.
 
-The hook targets pass MSVC STL types (`std::vector<Trait::ActorCondition>`, `std::function<bool(Graph::Node*)>`) by value, so the plugin must be built with the same release STL ABI as OStim. Use `build-release-msvc` for in-game testing and packaged builds. A debug build changes MSVC iterator/debug layout and can corrupt hook arguments, which was observed as empty actor-condition vectors, failed starting-scene selection, or missing menu options.
+The hook targets pass MSVC STL types (`std::vector<Trait::ActorCondition>`, `std::function<bool(Graph::Node*)>`) by value, so the plugin must be built with the same release STL ABI as OStim. Use `build-release-msvc` (or the Linux `build-release-linux-clangcl` preset, which emits the same MSVC ABI) for in-game testing and packaged builds. A debug build changes MSVC iterator/debug layout and can corrupt hook arguments, which was observed as empty actor-condition vectors, failed starting-scene selection, or missing menu options.
 
 ## Pitfalls and operational notes
 
-1. **Build environment**: The supported build path is Windows PowerShell with Visual Studio C++ tools, CMake, Ninja, and vcpkg. `build.ps1` locates Visual Studio with `vswhere`, initializes `vcvars64.bat`, and invokes the selected CMake preset. Set `VCPKG_ROOT` before building.
-2. **Release ABI required**: Hooked OStim functions cross DLL boundaries with STL types by value. Debug builds are useful for compile checks only; validate behavior with `build-release-msvc` / `./build.ps1`.
+0. **SKSE plugin declaration**: `skse/src/Main.cpp` uses CommonLibSSE-NG's `SKSEPluginInfo`, which emits **both** `SKSEPlugin_Version` and `SKSEPlugin_Query`. Both are required: SKSE 2.3.x (Skyrim SE 1.7.x / AE) reads only `SKSEPlugin_Version` and never calls `SKSEPlugin_Query`, while SKSE 2.0.x on Skyrim SE 1.5.97 routes through `SKSEPlugin_Query` and ignores `SKSEPlugin_Version`. The declaration is version-independent via Address Library (`VersionIndependence::AddressLibrary`), so it deliberately carries **no** runtime version list. `StructCompatibility::Independent` additionally sets `kVersionIndependentEx_AddressLibraryV5`, which SKSE 2.3.1 requires for the Address Library encoding used by 1.7.99+. Do not replace this with a hand-rolled single export — that is exactly what issue #1 reported.
+1. **Build environment**: Two supported build paths. Windows: PowerShell with Visual Studio C++ tools, CMake, Ninja, and vcpkg — `build.ps1` locates Visual Studio with `vswhere`, initializes `vcvars64.bat`, and invokes the selected CMake preset. Linux: `build.sh` cross-compiles the same MSVC-ABI DLL with `clang-cl` + `lld-link` against an `xwin` SDK/CRT sysroot (presets `build-release-linux-clangcl` / `build-debug-linux-clangcl`; one-time setup in `README.md` *Toolchain*). Set `VCPKG_ROOT` before building on either platform.
+2. **Release ABI required**: Hooked OStim functions cross DLL boundaries with STL types by value. Debug builds are useful for compile checks only; validate behavior with `build-release-msvc` / `./build.ps1` (or `./build.sh` on Linux).
 3. **Unknown OStim version**: Hooks silently skip installation; logs show `Unknown OStim.dll version` and per-hook `Could not resolve` warnings.
 4. **Verbose logging**: `ThreadContextHook.cpp` logs each actor’s scale breakdown at **info** level when threads start or nodes change — noisy during active scenes.
 5. **`kPluginVersion` drift**: `skse/src/Plugin.h` string is passed into `OstimNG_API::Thread::GetAPI`; keep it meaningful relative to releases and README.

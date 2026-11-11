@@ -74,7 +74,7 @@ bool SizeDiff::Hooks::InstallGetRandomNodeHook()
 		return false;
 	}
 
-	// MSVC decoration verified against OStim PDBs (7.5.0.0 - 7.5.1.2): Furniture::FurnitureType is a
+	// MSVC decoration verified against OStim PDBs (7.5.0.0 - 7.5.2.0): Furniture::FurnitureType is a
 	// struct (PEAU, not PEAV), and trailing `@7@` back-references `std`.
 	constexpr auto kSymbol = "?getRandomNode@GraphTable@Graph@@SAPEAUNode@2@PEAUFurnitureType@Furniture@@V?$vector@UActorCondition@Trait@@V?$allocator@UActorCondition@Trait@@@std@@@std@@V?$function@$$A6A_NPEAUNode@Graph@@@Z@7@@Z";
 	auto target = SizeDiff::AddressResolution::ResolveByPdbSymbol(kSymbol);

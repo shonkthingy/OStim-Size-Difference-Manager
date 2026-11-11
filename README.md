@@ -13,7 +13,7 @@ Scenes that were authored for same-height actors are hidden or skipped when the 
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Skyrim SE / AE**                                                                                | **1.5.97**, **1.6.x** and **1.7.x** are all supported by the **same DLL** via Address Library                                                                                                                                    |
 | **[SKSE64](https://www.nexusmods.com/skyrimspecialedition/mods/30379)**                           | Required                                                                                                                                                                                                                        |
-| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested in-game with **7.5.0.3**; hook signatures additionally validated against the shipped **7.5.1** / **7.5.1a** / **7.5.1b** / **7.5.1c** binaries. Supports the versions listed below; see *How it works* below                                                                        |
+| **[OStim Standalone](https://www.nexusmods.com/skyrimspecialedition/mods/98163)**                 | Tested in-game with **7.5.0.3**; hook signatures additionally validated against the shipped **7.5.1** / **7.5.1a** / **7.5.1b** / **7.5.1c** / **7.5.2** binaries. Supports the versions listed below; see *How it works* below |
 | **[Address Library For SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)** | Required                                                                                                                                                                                                                        |
 | **[SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/120352)**             | *Soft Requirement* for the in-game settings menu. (Configurable via INI without it).                                                                                                                                            |
 | **Size-Difference Animations**                                                                    | *Soft Requirement*. This mod filters scenes so that size-difference actors only use size-difference animations. You will need actual OStim animation packs designed for different sized actors installed for this to be useful. |
@@ -164,15 +164,19 @@ Hook addresses are resolved in this order:
 1. **PDB symbol lookup** (if debug symbols for `OStim.dll` are available)
 2. **Version-specific byte patterns** baked into the hook installers (documented in `data/SKSE/Plugins/OStimSizeDifferenceManager-Signatures.json`; the DLL does not read that JSON at runtime)
 
-PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, **7.5.0.0** through **7.5.0.3**, **7.5.1.0**, **7.5.1.2** and **7.5.1.3**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
+PE **FileVersion** strings whitelisted in `skse/src/AddressResolution/VersionGate.cpp`: **7.3.4.2** through **7.3.5.4**, **7.4.0.0** through **7.4.0.3**, **7.5.0.0** through **7.5.0.3**, **7.5.1.0**, **7.5.1.2**, **7.5.1.3** and **7.5.2.0**. Graph hook patterns switch at **7.3.5.3** (`UsesLegacyGraphBytePatterns`).
 
-Note that OStim **7.5.1** and **7.5.1a** both report PE FileVersion **7.5.1.0** (they share one signature set), while **7.5.1b** reports **7.5.1.2** and **7.5.1c** reports **7.5.1.3**.
+Note that OStim **7.5.1** and **7.5.1a** both report PE FileVersion **7.5.1.0** (they share one signature set), while **7.5.1b** reports **7.5.1.2**, **7.5.1c** reports **7.5.1.3**, and **7.5.2** reports **7.5.2.0**.
 
 To add support for a new OStim **FileVersion**, extend `kKnownVersions`, update patterns in the three hook `.cpp` files if the prologue changes, and sync `OStimSizeDifferenceManager-Signatures.json`.
 
 ---
 
 ## Changelog
+
+### v1.0.8
+
+- **OStim builds:** Recognize OStim **7.5.2** (PE FileVersion `7.5.2.0`). Hook patterns and PDB symbol decorations are unchanged and were re-verified against the shipped `OStim.dll` + `OStim.pdb` (every pattern hit lands on the PDB symbol RVA). The 7.5.2 delta (PPA integration and `ppaAction`/`ppaTarget` actor fields) does not affect the hooked call sites, the plugin interface ABI, or `scale` scene JSON parsing.
 
 ### v1.0.7
 
